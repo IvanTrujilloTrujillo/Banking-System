@@ -42,10 +42,10 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
                 .ignoringAntMatchers("/posts")
                 .ignoringAntMatchers("/posts/*");
         http.authorizeRequests()
-                .antMatchers(HttpMethod.GET, "/admin/bccount-balance/*").hasRole("ADMIN")
+                .antMatchers(HttpMethod.GET, "/admin/account-balance/*").hasRole("ADMIN")
                 .antMatchers(HttpMethod.POST, "/admin/account-holder").hasRole("ADMIN")
                 .antMatchers(HttpMethod.POST, "/admin/third-party").hasRole("ADMIN")
-                .antMatchers(HttpMethod.PATCH, "/admin/ccount-balance/*").hasRole("ADMIN")
+                .antMatchers(HttpMethod.PATCH, "/admin/account-balance/*").hasRole("ADMIN")
 
                 .antMatchers(HttpMethod.POST, "/posts").hasAnyRole("ADMIN", "CONTRIBUTOR")
                 .antMatchers(HttpMethod.PUT, "/authors/*").hasAnyRole("ADMIN", "CONTRIBUTOR")
