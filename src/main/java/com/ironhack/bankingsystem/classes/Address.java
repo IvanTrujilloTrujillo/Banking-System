@@ -30,6 +30,9 @@ public class Address {
         setCountry(country);
     }
 
+    public Address() {
+    }
+
     public String getStreet() {
         return street;
     }

@@ -12,6 +12,7 @@ CREATE TABLE user (
 
 CREATE TABLE account_holder (
 	id BIGINT NOT NULL AUTO_INCREMENT,
+    birth_date DATE,
     mailing_city VARCHAR(255),
 	mailing_country VARCHAR(255),
 	mailing_door VARCHAR(20),

@@ -34,7 +34,7 @@ public class AccountService implements IAccountService {
                 account.setBalance(newBalance);
                 accountRepository.save(account);
             } catch (IllegalArgumentException | NullPointerException e) {
-                throw new IllegalArgumentException("It isn't a supported ISO 4217 code");
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "It isn't a supported ISO 4217 code");
             }
 
         } else {

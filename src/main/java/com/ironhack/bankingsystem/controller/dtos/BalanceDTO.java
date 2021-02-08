@@ -9,7 +9,6 @@ import java.math.BigDecimal;
 public class BalanceDTO {
     private String currency = "USD";
     @Digits(integer = 19, fraction = 2, message = "The amount must have two decimals")
-    @DecimalMin(value = "0", message = "The amount must be greater or equal than 0")
     private BigDecimal amount;
 
     public BalanceDTO() {

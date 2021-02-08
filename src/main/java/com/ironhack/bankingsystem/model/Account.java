@@ -63,7 +63,7 @@ public abstract class Account {
         this.balance = balance;
     }
 
-    public User getPrimaryOwner() {
+    public AccountHolder getPrimaryOwner() {
         return primaryOwner;
     }
 
@@ -71,7 +71,7 @@ public abstract class Account {
         this.primaryOwner = primaryOwner;
     }
 
-    public User getSecondaryOwner() {
+    public AccountHolder getSecondaryOwner() {
         return secondaryOwner;
     }
 

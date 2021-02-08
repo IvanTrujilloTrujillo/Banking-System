@@ -4,10 +4,12 @@ import com.ironhack.bankingsystem.classes.Address;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
+import java.time.LocalDateTime;
 
 @Entity
 @PrimaryKeyJoinColumn(name = "id")
 public class AccountHolder extends User{
+    private LocalDateTime birthDate;
     @Embedded
     @AttributeOverrides({
             @AttributeOverride(name="street",column=@Column(name="primary_street")),
@@ -35,15 +37,25 @@ public class AccountHolder extends User{
     public AccountHolder() {
     }
 
-    public AccountHolder(String name, String username, String password, Address primaryAddress, Address mailingAddress) {
+    public AccountHolder(String name, String username, String password, LocalDateTime birthDate, Address primaryAddress, Address mailingAddress) {
         super(name, username, password);
+        setBirthDate(birthDate);
         setPrimaryAddress(primaryAddress);
         setMailingAddress(mailingAddress);
     }
 
-    public AccountHolder(String name, String username, String password, Address primaryAddress) {
+    public AccountHolder(String name, String username, String password, LocalDateTime birthDate, Address primaryAddress) {
         super(name, username, password);
+        setBirthDate(birthDate);
         setPrimaryAddress(primaryAddress);
+    }
+
+    public LocalDateTime getBirthDate() {
+        return birthDate;
+    }
+
+    public void setBirthDate(LocalDateTime birthDate) {
+        this.birthDate = birthDate;
     }
 
     public Address getPrimaryAddress() {

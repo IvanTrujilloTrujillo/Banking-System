@@ -12,11 +12,11 @@ import java.math.BigDecimal;
 @Entity
 @PrimaryKeyJoinColumn(name = "id")
 public class CreditCard extends Account{
-    @Digits(integer = 8, fraction = 0, message = "The credit limit mustn't have decimals")
+    @Digits(integer = 8, fraction = 2, message = "The credit limit must have two decimals")
     @DecimalMax(value = "100000", message = "The credit limit must be smaller or equal than 100,000")
     @DecimalMin(value = "100", message = "The credit limit must be greater or equal than 100")
     private BigDecimal creditLimit = new BigDecimal("100");
-    @Digits(integer = 2, fraction = 1, message = "The interest rate must have only one decimal")
+    @Digits(integer = 2, fraction = 2, message = "The interest rate must have two decimals")
     @DecimalMax(value = "0.2", message = "The interest rate must be smaller or equal than 0.2")
     @DecimalMin(value = "0.1", message = "The interest rate must be greater or equal than 0.1")
     private BigDecimal interestRate = new BigDecimal("0.2");

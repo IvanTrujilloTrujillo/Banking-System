@@ -18,7 +18,7 @@ import java.math.BigDecimal;
 public class Saving extends Account{
     @NotEmpty
     private String secretKey;
-    @Digits(integer = 8, fraction = 0, message = "The minimum balance mustn't have decimals")
+    @Digits(integer = 8, fraction = 2, message = "The minimum balance must have two decimals")
     @DecimalMax(value = "1000", message = "The minimum balance must be smaller or equal than 1000")
     @DecimalMin(value = "100", message = "The minimum balance must be greater or equal than 100")
     private BigDecimal minimumBalance = new BigDecimal("1000");

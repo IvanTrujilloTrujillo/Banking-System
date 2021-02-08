@@ -45,6 +45,9 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
                 .antMatchers(HttpMethod.GET, "/admin/account-balance/*").hasRole("ADMIN")
                 .antMatchers(HttpMethod.POST, "/admin/account-holder").hasRole("ADMIN")
                 .antMatchers(HttpMethod.POST, "/admin/third-party").hasRole("ADMIN")
+                .antMatchers(HttpMethod.POST, "/admin/checking").hasRole("ADMIN")
+                .antMatchers(HttpMethod.POST, "/admin/saving").hasRole("ADMIN")
+                .antMatchers(HttpMethod.POST, "/admin/credit-card").hasRole("ADMIN")
                 .antMatchers(HttpMethod.PATCH, "/admin/account-balance/*").hasRole("ADMIN")
 
                 .antMatchers(HttpMethod.POST, "/posts").hasAnyRole("ADMIN", "CONTRIBUTOR")
