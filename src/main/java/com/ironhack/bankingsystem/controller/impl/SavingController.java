@@ -24,7 +24,7 @@ public class SavingController implements ISavingController {
 
     @PostMapping("/admin/saving")
     @ResponseStatus(HttpStatus.CREATED)
-    public Saving createCreditCard(@RequestBody @Valid Saving saving) {
+    public Saving createSaving(@RequestBody @Valid Saving saving) {
         return savingService.createSaving(saving);
     }
 }

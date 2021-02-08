@@ -24,7 +24,7 @@ public class ThirdPartyController implements IThirdPartyController {
 
     @PostMapping("/admin/third-party")
     @ResponseStatus(HttpStatus.CREATED)
-    public ThirdParty createAccountHolder(@RequestBody @Valid ThirdParty thirdParty) {
+    public ThirdParty createThirdParty(@RequestBody @Valid ThirdParty thirdParty) {
         return thirdPartyService.createThirdParty(thirdParty);
     }
 }

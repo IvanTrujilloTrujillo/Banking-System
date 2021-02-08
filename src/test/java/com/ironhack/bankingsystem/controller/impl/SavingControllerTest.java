@@ -2,8 +2,11 @@ package com.ironhack.bankingsystem.controller.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ironhack.bankingsystem.classes.Address;
+import com.ironhack.bankingsystem.classes.Money;
 import com.ironhack.bankingsystem.model.AccountHolder;
+import com.ironhack.bankingsystem.model.Saving;
 import com.ironhack.bankingsystem.repository.AccountHolderRepository;
+import com.ironhack.bankingsystem.repository.SavingRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -15,6 +18,7 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
+import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 
@@ -23,7 +27,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
-class AccountHolderControllerTest {
+class SavingControllerTest {
 
     @Autowired
     private WebApplicationContext webApplicationContext;
@@ -31,9 +35,14 @@ class AccountHolderControllerTest {
     @Autowired
     private AccountHolderRepository accountHolderRepository;
 
+    @Autowired
+    private SavingRepository savingRepository;
+
     private MockMvc mockMvc;
 
     private ObjectMapper objectMapper = new ObjectMapper();
+
+    private Saving saving;
 
     private AccountHolder accountHolder;
 
@@ -46,52 +55,47 @@ class AccountHolderControllerTest {
                 new Address("Calle Benito Pérez, 10, 2A", "30254", "Madrid", "Spain")
         );
 
+        saving = new Saving(new Money(BigDecimal.valueOf(1500)), accountHolder, "A1B2C3");
+
         accountHolderRepository.save(accountHolder);
+        savingRepository.save(saving);
     }
 
     @AfterEach
     public void tearDown() {
+        savingRepository.deleteAll();
         accountHolderRepository.deleteAll();
     }
 
     @Test
-    public void createAccountHolder_ValidAccountHolder_AccountHolderSaved() throws Exception {
-        AccountHolder newAccountHolder = new AccountHolder("Melissa Miérez", "melissam", "1234",
-                LocalDateTime.of(1990, 3, 10, 0, 0),
-                new Address("Calle Alfredo Krauss, 13, 3B", "43270", "Madrid", "Spain")
-        );
-        String body = objectMapper.writeValueAsString(newAccountHolder);
+    public void createSaving_ValidSaving_SavingSaved() throws Exception {
+        Saving newSaving = new Saving(new Money(BigDecimal.valueOf(2000)), accountHolder, "Z9Y8X7");
+        String body = objectMapper.writeValueAsString(newSaving);
 
-        MvcResult result = mockMvc.perform(post("/admin/account-holder").content(body)
+        MvcResult result = mockMvc.perform(post("/admin/saving").content(body)
                 .contentType(MediaType.APPLICATION_JSON).characterEncoding("UTF-8"))
                 .andExpect(status().isCreated())
                 .andReturn();
 
-        assertTrue(result.getResponse().getContentAsString(StandardCharsets.UTF_8).contains("Melissa Miérez"));
+        assertTrue(result.getResponse().getContentAsString(StandardCharsets.UTF_8).contains("Z9Y8X7"));
     }
 
     @Test
-    public void createAccountHolder_NotValidAccountHolder_BadRequest() throws Exception {
-        AccountHolder newAccountHolder = new AccountHolder("Melissa Miérez", "melissam", "1234",
-                LocalDateTime.of(2023, 3, 10, 0, 0),
-                new Address("Calle Alfredo Krauss, 13, 3B", "43270", "Madrid", "Spain")
-        );
-        String body = objectMapper.writeValueAsString(newAccountHolder);
+    public void createSaving_NotValidSaving_NotAcceptable() throws Exception {
+        Saving newSaving = new Saving(new Money(BigDecimal.valueOf(-50)), accountHolder, "Z9Y8X7");
+        String body = objectMapper.writeValueAsString(newSaving);
 
-        MvcResult result1 = mockMvc.perform(post("/admin/account-holder").content(body)
+        MvcResult result1 = mockMvc.perform(post("/admin/saving").content(body)
                 .contentType(MediaType.APPLICATION_JSON).characterEncoding("UTF-8"))
-                .andExpect(status().isBadRequest())
+                .andExpect(status().isNotAcceptable())
                 .andReturn();
 
-        newAccountHolder = new AccountHolder("", "melissam", "1234",
-                LocalDateTime.of(1990, 3, 10, 0, 0),
-                new Address("Calle Alfredo Krauss, 13, 3B", "43270", "Madrid", "Spain")
-        );
-        body = objectMapper.writeValueAsString(newAccountHolder);
+        newSaving = new Saving(new Money(BigDecimal.valueOf(2000)), accountHolder, "");
+        body = objectMapper.writeValueAsString(newSaving);
 
-        MvcResult result2 = mockMvc.perform(post("/admin/account-holder").content(body)
+        MvcResult result2 = mockMvc.perform(post("/admin/saving").content(body)
                 .contentType(MediaType.APPLICATION_JSON).characterEncoding("UTF-8"))
-                .andExpect(status().isBadRequest())
+                .andExpect(status().isNotAcceptable())
                 .andReturn();
     }
 }

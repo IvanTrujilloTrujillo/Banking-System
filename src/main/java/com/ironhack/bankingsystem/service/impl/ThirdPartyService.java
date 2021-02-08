@@ -36,9 +36,6 @@ public class ThirdPartyService implements IThirdPartyService {
         } else {
             PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
             thirdParty.setPassword(passwordEncoder.encode(thirdParty.getPassword()));
-            /*
-              Some code here to create a new user
-             */
             return thirdPartyRepository.save(thirdParty);
         }
     }

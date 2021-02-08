@@ -74,7 +74,7 @@ class AccountControllerTest {
 
         accountHolder = new AccountHolder("Manuel Gómez", "manuelg", "1234",
                 LocalDateTime.of(1995, 2, 5, 0, 0),
-                new Address("Calle Benito Pérez", 10, 2, "A", "30254", "Madrid", "Spain")
+                new Address("Calle Benito Pérez, 10, 2A", "30254", "Madrid", "Spain")
         );
 
         checking = new Checking(new Money(BigDecimal.valueOf(500)), accountHolder, "A1B2C3");

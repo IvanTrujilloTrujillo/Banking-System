@@ -2,8 +2,11 @@ package com.ironhack.bankingsystem.controller.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ironhack.bankingsystem.classes.Address;
+import com.ironhack.bankingsystem.classes.Money;
 import com.ironhack.bankingsystem.model.AccountHolder;
+import com.ironhack.bankingsystem.model.CreditCard;
 import com.ironhack.bankingsystem.repository.AccountHolderRepository;
+import com.ironhack.bankingsystem.repository.CreditCardRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -15,15 +18,17 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
+import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
-class AccountHolderControllerTest {
+class CreditCardControllerTest {
 
     @Autowired
     private WebApplicationContext webApplicationContext;
@@ -31,9 +36,14 @@ class AccountHolderControllerTest {
     @Autowired
     private AccountHolderRepository accountHolderRepository;
 
+    @Autowired
+    private CreditCardRepository creditCardRepository;
+
     private MockMvc mockMvc;
 
     private ObjectMapper objectMapper = new ObjectMapper();
+
+    private CreditCard creditCard;
 
     private AccountHolder accountHolder;
 
@@ -46,52 +56,39 @@ class AccountHolderControllerTest {
                 new Address("Calle Benito Pérez, 10, 2A", "30254", "Madrid", "Spain")
         );
 
+        creditCard = new CreditCard(new Money(BigDecimal.valueOf(1000)), accountHolder);
+
         accountHolderRepository.save(accountHolder);
+        creditCardRepository.save(creditCard);
     }
 
     @AfterEach
     public void tearDown() {
+        creditCardRepository.deleteAll();
         accountHolderRepository.deleteAll();
     }
 
     @Test
-    public void createAccountHolder_ValidAccountHolder_AccountHolderSaved() throws Exception {
-        AccountHolder newAccountHolder = new AccountHolder("Melissa Miérez", "melissam", "1234",
-                LocalDateTime.of(1990, 3, 10, 0, 0),
-                new Address("Calle Alfredo Krauss, 13, 3B", "43270", "Madrid", "Spain")
-        );
-        String body = objectMapper.writeValueAsString(newAccountHolder);
+    public void createCreditCard_ValidCreditCard_CreditCardSaved() throws Exception {
+        CreditCard newCreditCard = new CreditCard(new Money(BigDecimal.valueOf(2000)), accountHolder);
+        String body = objectMapper.writeValueAsString(newCreditCard);
 
-        MvcResult result = mockMvc.perform(post("/admin/account-holder").content(body)
+        MvcResult result = mockMvc.perform(post("/admin/credit-card").content(body)
                 .contentType(MediaType.APPLICATION_JSON).characterEncoding("UTF-8"))
                 .andExpect(status().isCreated())
                 .andReturn();
 
-        assertTrue(result.getResponse().getContentAsString(StandardCharsets.UTF_8).contains("Melissa Miérez"));
+        assertTrue(result.getResponse().getContentAsString(StandardCharsets.UTF_8).contains("2000"));
     }
 
     @Test
-    public void createAccountHolder_NotValidAccountHolder_BadRequest() throws Exception {
-        AccountHolder newAccountHolder = new AccountHolder("Melissa Miérez", "melissam", "1234",
-                LocalDateTime.of(2023, 3, 10, 0, 0),
-                new Address("Calle Alfredo Krauss, 13, 3B", "43270", "Madrid", "Spain")
-        );
-        String body = objectMapper.writeValueAsString(newAccountHolder);
+    public void createCreditCard_NotValidCreditCard_NotAcceptable() throws Exception {
+        CreditCard newCreditCard = new CreditCard(new Money(BigDecimal.valueOf(-50)), accountHolder);
+        String body = objectMapper.writeValueAsString(newCreditCard);
 
-        MvcResult result1 = mockMvc.perform(post("/admin/account-holder").content(body)
+        MvcResult result = mockMvc.perform(post("/admin/credit-card").content(body)
                 .contentType(MediaType.APPLICATION_JSON).characterEncoding("UTF-8"))
-                .andExpect(status().isBadRequest())
-                .andReturn();
-
-        newAccountHolder = new AccountHolder("", "melissam", "1234",
-                LocalDateTime.of(1990, 3, 10, 0, 0),
-                new Address("Calle Alfredo Krauss, 13, 3B", "43270", "Madrid", "Spain")
-        );
-        body = objectMapper.writeValueAsString(newAccountHolder);
-
-        MvcResult result2 = mockMvc.perform(post("/admin/account-holder").content(body)
-                .contentType(MediaType.APPLICATION_JSON).characterEncoding("UTF-8"))
-                .andExpect(status().isBadRequest())
+                .andExpect(status().isNotAcceptable())
                 .andReturn();
     }
 }

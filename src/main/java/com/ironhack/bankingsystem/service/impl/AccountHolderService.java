@@ -26,9 +26,6 @@ public class AccountHolderService implements IAccountHolderService {
         } else {
             PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
             accountHolder.setPassword(passwordEncoder.encode(accountHolder.getPassword()));
-            /*
-              Some code here to create a new user
-             */
             return accountHolderRepository.save(accountHolder);
         }
     }
