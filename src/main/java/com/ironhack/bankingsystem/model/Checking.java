@@ -1,9 +1,9 @@
 package com.ironhack.bankingsystem.model;
 
+import com.ironhack.bankingsystem.classes.Money;
 import com.ironhack.bankingsystem.enums.Status;
 
 import javax.persistence.*;
-import java.math.BigDecimal;
 
 @Entity
 @PrimaryKeyJoinColumn(name = "id")
@@ -16,7 +16,7 @@ public class Checking  extends Account{
     public Checking() {
     }
 
-    public Checking(BigDecimal balance, User primaryOwner, User secondaryOwner, String secretKey, Integer minimumBalance, Integer monthlyMaintenanceFee, Status status) {
+    public Checking(Money balance, User primaryOwner, User secondaryOwner, String secretKey, Integer minimumBalance, Integer monthlyMaintenanceFee, Status status) {
         super(balance, primaryOwner, secondaryOwner);
         setSecretKey(secretKey);
         setMinimumBalance(minimumBalance);
@@ -24,7 +24,7 @@ public class Checking  extends Account{
         setStatus(status);
     }
 
-    public Checking(BigDecimal balance, User primaryOwner, String secretKey, Integer minimumBalance, Integer monthlyMaintenanceFee, Status status) {
+    public Checking(Money balance, User primaryOwner, String secretKey, Integer minimumBalance, Integer monthlyMaintenanceFee, Status status) {
         super(balance, primaryOwner);
         setSecretKey(secretKey);
         setMinimumBalance(minimumBalance);

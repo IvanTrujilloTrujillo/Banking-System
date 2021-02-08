@@ -33,9 +33,17 @@ CREATE TABLE role (
     FOREIGN KEY (user_id) REFERENCES user(id)
 ) ENGINE InnoDB;
 
+CREATE TABLE balance (
+	currency VARCHAR(3),
+    amount DECIMAL,
+    account_id BIGINT,
+    PRIMARY KEY (currency),
+    PRIMARY KEY (account_id),
+    FOREIGN KEY (account_id) REFERENCES account(id)
+);
+
 CREATE TABLE account (
 	id BIGINT NOT NULL AUTO_INCREMENT,
-    balance DECIMAL,
     primary_owner_id BIGINT,
     secundary_owner_id BIGINT,
     PRIMARY KEY (id),

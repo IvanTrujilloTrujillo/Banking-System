@@ -1,5 +1,6 @@
 package com.ironhack.bankingsystem.model;
 
+import com.ironhack.bankingsystem.classes.Money;
 import com.ironhack.bankingsystem.enums.Status;
 
 import javax.persistence.Entity;
@@ -17,7 +18,7 @@ public class Saving extends Account{
     public Saving() {
     }
 
-    public Saving(BigDecimal balance, User primaryOwner, User secondaryOwner, String secretKey, Integer minimumBalance, Status status, BigDecimal interestRate) {
+    public Saving(Money balance, User primaryOwner, User secondaryOwner, String secretKey, Integer minimumBalance, Status status, BigDecimal interestRate) {
         super(balance, primaryOwner, secondaryOwner);
         setSecretKey(secretKey);
         setMinimumBalance(minimumBalance);
@@ -25,7 +26,7 @@ public class Saving extends Account{
         setInterestRate(interestRate);
     }
 
-    public Saving(BigDecimal balance, User primaryOwner, String secretKey, Integer minimumBalance, Status status, BigDecimal interestRate) {
+    public Saving(Money balance, User primaryOwner, String secretKey, Integer minimumBalance, Status status, BigDecimal interestRate) {
         super(balance, primaryOwner);
         setSecretKey(secretKey);
         setMinimumBalance(minimumBalance);

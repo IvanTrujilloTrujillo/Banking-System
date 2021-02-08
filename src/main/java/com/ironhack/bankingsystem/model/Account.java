@@ -1,17 +1,21 @@
 package com.ironhack.bankingsystem.model;
 
+import com.ironhack.bankingsystem.classes.Money;
+
 import javax.persistence.*;
-import java.math.BigDecimal;
+import java.util.List;
 
 @Entity
-public abstract class Account {
+@Inheritance(strategy = InheritanceType.JOINED)
+public class Account {
 
     private static final Integer PENALTY_FEE = 40;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private BigDecimal balance;
+    @Embedded
+    private Money balance;
     @OneToOne
     private User primaryOwner;
     @OneToOne
@@ -20,13 +24,13 @@ public abstract class Account {
     public Account() {
     }
 
-    public Account(BigDecimal balance, User primaryOwner, User secondaryOwner) {
+    public Account(Money balance, User primaryOwner, User secondaryOwner) {
         setBalance(balance);
         setPrimaryOwner(primaryOwner);
         setSecondaryOwner(secondaryOwner);
     }
 
-    public Account(BigDecimal balance, User primaryOwner) {
+    public Account(Money balance, User primaryOwner) {
         setBalance(balance);
         setPrimaryOwner(primaryOwner);
     }
@@ -39,11 +43,11 @@ public abstract class Account {
         this.id = id;
     }
 
-    public BigDecimal getBalance() {
+    public Money getBalance() {
         return balance;
     }
 
-    public void setBalance(BigDecimal balance) {
+    public void setBalance(Money balance) {
         this.balance = balance;
     }
 

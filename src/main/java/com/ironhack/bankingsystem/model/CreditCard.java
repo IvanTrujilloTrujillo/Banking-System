@@ -1,5 +1,7 @@
 package com.ironhack.bankingsystem.model;
 
+import com.ironhack.bankingsystem.classes.Money;
+
 import javax.persistence.Entity;
 import javax.persistence.PrimaryKeyJoinColumn;
 import java.math.BigDecimal;
@@ -13,13 +15,13 @@ public class CreditCard extends Account{
     public CreditCard() {
     }
 
-    public CreditCard(BigDecimal balance, User primaryOwner, User secondaryOwner, Integer creditLimit, BigDecimal interestRate) {
+    public CreditCard(Money balance, User primaryOwner, User secondaryOwner, Integer creditLimit, BigDecimal interestRate) {
         super(balance, primaryOwner, secondaryOwner);
         setCreditLimit(creditLimit);
         setInterestRate(interestRate);
     }
 
-    public CreditCard(BigDecimal balance, User primaryOwner, Integer creditLimit, BigDecimal interestRate) {
+    public CreditCard(Money balance, User primaryOwner, Integer creditLimit, BigDecimal interestRate) {
         super(balance, primaryOwner);
         setCreditLimit(creditLimit);
         setInterestRate(interestRate);
