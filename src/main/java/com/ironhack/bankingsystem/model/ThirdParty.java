@@ -2,10 +2,12 @@ package com.ironhack.bankingsystem.model;
 
 import javax.persistence.Entity;
 import javax.persistence.PrimaryKeyJoinColumn;
+import javax.validation.constraints.NotEmpty;
 
 @Entity
 @PrimaryKeyJoinColumn(name = "id")
 public class ThirdParty extends User{
+    @NotEmpty
     private String hashedKey;
 
     public ThirdParty() {

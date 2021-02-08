@@ -1,14 +1,18 @@
 package com.ironhack.bankingsystem.model;
 
 import javax.persistence.*;
+import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotNull;
 
 @Entity
 public class Role {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    @NotEmpty
     private String name;
     @ManyToOne
+    @NotNull
     private User user;
 
     public Role() {

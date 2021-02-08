@@ -4,32 +4,32 @@ import com.ironhack.bankingsystem.classes.Money;
 import com.ironhack.bankingsystem.enums.Status;
 
 import javax.persistence.*;
+import javax.validation.constraints.NotEmpty;
+import java.math.BigDecimal;
 
 @Entity
 @PrimaryKeyJoinColumn(name = "id")
-public class Checking  extends Account{
+public class Checking extends Account{
+
+    private static final BigDecimal MINIMUM_BALANCE = new BigDecimal("250");
+    private static final BigDecimal MONTHLY_MAINTENANCE_FEE = new BigDecimal("12");
+
+    @NotEmpty
     private String secretKey;
-    private Integer minimumBalance;
-    private Integer monthlyMaintenanceFee;
-    private Status status;
+    @Enumerated(EnumType.STRING)
+    private Status status = Status.ACTIVE;
 
     public Checking() {
     }
 
-    public Checking(Money balance, User primaryOwner, User secondaryOwner, String secretKey, Integer minimumBalance, Integer monthlyMaintenanceFee, Status status) {
+    public Checking(Money balance, AccountHolder primaryOwner, AccountHolder secondaryOwner, String secretKey) {
         super(balance, primaryOwner, secondaryOwner);
         setSecretKey(secretKey);
-        setMinimumBalance(minimumBalance);
-        setMonthlyMaintenanceFee(monthlyMaintenanceFee);
-        setStatus(status);
     }
 
-    public Checking(Money balance, User primaryOwner, String secretKey, Integer minimumBalance, Integer monthlyMaintenanceFee, Status status) {
+    public Checking(Money balance, AccountHolder primaryOwner, String secretKey) {
         super(balance, primaryOwner);
         setSecretKey(secretKey);
-        setMinimumBalance(minimumBalance);
-        setMonthlyMaintenanceFee(monthlyMaintenanceFee);
-        setStatus(status);
     }
 
     public String getSecretKey() {
@@ -40,20 +40,12 @@ public class Checking  extends Account{
         this.secretKey = secretKey;
     }
 
-    public Integer getMinimumBalance() {
-        return minimumBalance;
+    public BigDecimal getMinimumBalance() {
+        return MINIMUM_BALANCE;
     }
 
-    public void setMinimumBalance(Integer minimumBalance) {
-        this.minimumBalance = minimumBalance;
-    }
-
-    public Integer getMonthlyMaintenanceFee() {
-        return monthlyMaintenanceFee;
-    }
-
-    public void setMonthlyMaintenanceFee(Integer monthlyMaintenanceFee) {
-        this.monthlyMaintenanceFee = monthlyMaintenanceFee;
+    public BigDecimal getMonthlyMaintenanceFee() {
+        return MONTHLY_MAINTENANCE_FEE;
     }
 
     public Status getStatus() {

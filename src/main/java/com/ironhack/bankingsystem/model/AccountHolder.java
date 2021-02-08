@@ -3,6 +3,7 @@ package com.ironhack.bankingsystem.model;
 import com.ironhack.bankingsystem.classes.Address;
 
 import javax.persistence.*;
+import javax.validation.constraints.NotNull;
 
 @Entity
 @PrimaryKeyJoinColumn(name = "id")
@@ -17,6 +18,7 @@ public class AccountHolder extends User{
             @AttributeOverride(name="city",column=@Column(name="primary_city")),
             @AttributeOverride(name="country",column=@Column(name="primary_country"))
     })
+    @NotNull
     private Address primaryAddress;
     @Embedded
     @AttributeOverrides({

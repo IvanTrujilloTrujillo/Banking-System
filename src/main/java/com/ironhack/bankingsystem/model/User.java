@@ -1,6 +1,7 @@
 package com.ironhack.bankingsystem.model;
 
 import javax.persistence.*;
+import javax.validation.constraints.NotEmpty;
 import java.util.Set;
 
 @Entity
@@ -9,8 +10,11 @@ public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    @NotEmpty
     private String name;
+    @NotEmpty
     private String username;
+    @NotEmpty
     private String password;
 
     @OneToMany(mappedBy = "user", fetch = FetchType.EAGER, cascade = CascadeType.ALL)

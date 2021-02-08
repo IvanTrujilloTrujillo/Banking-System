@@ -3,11 +3,13 @@ package com.ironhack.bankingsystem.model;
 import com.ironhack.bankingsystem.classes.Money;
 
 import javax.persistence.*;
-import java.util.List;
+import javax.validation.constraints.NotNull;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Entity
 @Inheritance(strategy = InheritanceType.JOINED)
-public class Account {
+public abstract class Account {
 
     private static final Integer PENALTY_FEE = 40;
 
@@ -15,24 +17,34 @@ public class Account {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     @Embedded
+    @NotNull
     private Money balance;
     @OneToOne
-    private User primaryOwner;
+    @NotNull
+    private AccountHolder primaryOwner;
     @OneToOne
-    private User secondaryOwner;
+    private AccountHolder secondaryOwner;
+    private LocalDateTime creationDate;
+    private BigDecimal maxLimitTransactions = new BigDecimal("100");
 
     public Account() {
     }
 
-    public Account(Money balance, User primaryOwner, User secondaryOwner) {
+    public Account(Money balance, AccountHolder primaryOwner, AccountHolder secondaryOwner) {
         setBalance(balance);
         setPrimaryOwner(primaryOwner);
         setSecondaryOwner(secondaryOwner);
+        this.creationDate = LocalDateTime.now();
     }
 
-    public Account(Money balance, User primaryOwner) {
+    public Account(Money balance, AccountHolder primaryOwner) {
         setBalance(balance);
         setPrimaryOwner(primaryOwner);
+        this.creationDate = LocalDateTime.now();
+    }
+
+    public Integer getPenaltyFee() {
+        return PENALTY_FEE;
     }
 
     public Long getId() {
@@ -55,7 +67,7 @@ public class Account {
         return primaryOwner;
     }
 
-    public void setPrimaryOwner(User primaryOwner) {
+    public void setPrimaryOwner(AccountHolder primaryOwner) {
         this.primaryOwner = primaryOwner;
     }
 
@@ -63,7 +75,11 @@ public class Account {
         return secondaryOwner;
     }
 
-    public void setSecondaryOwner(User secondaryOwner) {
+    public void setSecondaryOwner(AccountHolder secondaryOwner) {
         this.secondaryOwner = secondaryOwner;
+    }
+
+    public LocalDateTime getCreationDate() {
+        return creationDate;
     }
 }

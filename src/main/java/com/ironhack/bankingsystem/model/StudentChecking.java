@@ -4,27 +4,30 @@ import com.ironhack.bankingsystem.classes.Money;
 import com.ironhack.bankingsystem.enums.Status;
 
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.PrimaryKeyJoinColumn;
+import javax.validation.constraints.NotEmpty;
 
 @Entity
 @PrimaryKeyJoinColumn(name = "id")
 public class StudentChecking extends Account {
+    @NotEmpty
     private String secretKey;
-    private Status status;
+    @Enumerated(EnumType.STRING)
+    private Status status = Status.ACTIVE;
 
     public StudentChecking() {
     }
 
-    public StudentChecking(Money balance, User primaryOwner, User secondaryOwner, String secretKey, Status status) {
+    public StudentChecking(Money balance, AccountHolder primaryOwner, AccountHolder secondaryOwner, String secretKey) {
         super(balance, primaryOwner, secondaryOwner);
         setSecretKey(secretKey);
-        setStatus(status);
     }
 
-    public StudentChecking(Money balance, User primaryOwner, String secretKey, Status status) {
+    public StudentChecking(Money balance, AccountHolder primaryOwner, String secretKey) {
         super(balance, primaryOwner);
         setSecretKey(secretKey);
-        setStatus(status);
     }
 
     public String getSecretKey() {
