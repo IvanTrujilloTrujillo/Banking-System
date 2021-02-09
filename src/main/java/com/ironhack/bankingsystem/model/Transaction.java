@@ -3,6 +3,8 @@ package com.ironhack.bankingsystem.model;
 import com.ironhack.bankingsystem.classes.Money;
 
 import javax.persistence.*;
+import javax.validation.constraints.Min;
+import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 
@@ -13,10 +15,12 @@ public class Transaction {
     private Long id;
     @ManyToOne
     @NotNull
-    private AccountHolder senderAccount;
-    @ManyToOne
+    private Account senderAccount;
+    @NotEmpty
+    private String receiverAccountHolderName;
     @NotNull
-    private AccountHolder receiverAccount;
+    @Min(1)
+    private Long receiverAccountId;
     @Embedded
     @NotNull
     private Money amount;
@@ -25,9 +29,10 @@ public class Transaction {
     public Transaction() {
     }
 
-    public Transaction(AccountHolder senderAccount, AccountHolder receiverAccount, Money amount) {
+    public Transaction(Account senderAccount, String receiverAccountHolderName, Long receiverAccountId, Money amount) {
         setSenderAccount(senderAccount);
-        setReceiverAccount(receiverAccount);
+        setReceiverAccountHolderName(receiverAccountHolderName);
+        setReceiverAccountId(receiverAccountId);
         setAmount(amount);
         this.transactionDate = LocalDateTime.now();
     }
@@ -40,20 +45,28 @@ public class Transaction {
         this.id = id;
     }
 
-    public AccountHolder getSenderAccount() {
+    public Account getSenderAccount() {
         return senderAccount;
     }
 
-    public void setSenderAccount(AccountHolder senderAccount) {
+    public void setSenderAccount(Account senderAccount) {
         this.senderAccount = senderAccount;
     }
 
-    public AccountHolder getReceiverAccount() {
-        return receiverAccount;
+    public String getReceiverAccountHolderName() {
+        return receiverAccountHolderName;
     }
 
-    public void setReceiverAccount(AccountHolder receiverAccount) {
-        this.receiverAccount = receiverAccount;
+    public void setReceiverAccountHolderName(String receiverAccountHolderName) {
+        this.receiverAccountHolderName = receiverAccountHolderName;
+    }
+
+    public Long getReceiverAccountId() {
+        return receiverAccountId;
+    }
+
+    public void setReceiverAccountId(Long receiverAccountId) {
+        this.receiverAccountId = receiverAccountId;
     }
 
     public Money getAmount() {
@@ -66,5 +79,9 @@ public class Transaction {
 
     public LocalDateTime getTransactionDate() {
         return transactionDate;
+    }
+
+    public void setTransactionDate(LocalDateTime transactionDate) {
+        this.transactionDate = transactionDate;
     }
 }

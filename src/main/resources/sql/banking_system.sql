@@ -99,11 +99,11 @@ CREATE TABLE credit_card (
 CREATE TABLE transaction (
 	id BIGINT NOT NULL AUTO_INCREMENT,
     sender_account_id BIGINT,
+    receiver_account_holder_name VARCHAR(255),
     receiver_account_id BIGINT,
     currency VARCHAR(255),
     amount DECIMAL(19,2),
     transaction_date DATE,
     PRIMARY KEY (id),
-    FOREIGN KEY (sender_account_id) REFERENCES account(id),
-    FOREIGN KEY (receiver_account_id) REFERENCES account(id)
+    FOREIGN KEY (sender_account_id) REFERENCES account(id)
 ) ENGINE InnoDB;

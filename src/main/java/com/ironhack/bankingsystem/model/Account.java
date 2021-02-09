@@ -10,7 +10,7 @@ import java.util.Currency;
 
 @Entity
 @Inheritance(strategy = InheritanceType.JOINED)
-public abstract class Account {
+public class Account {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
