@@ -37,7 +37,8 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         http.httpBasic();
-        http.csrf().ignoringAntMatchers("/admin/*");
+        http.csrf().ignoringAntMatchers("/admin/*")
+                .ignoringAntMatchers("/account/*");
         http.authorizeRequests()
                 .antMatchers(HttpMethod.GET, "/admin/account-balance/*").hasRole("ADMIN")
                 .antMatchers(HttpMethod.POST, "/admin/account-holder").hasRole("ADMIN")
@@ -46,6 +47,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
                 .antMatchers(HttpMethod.POST, "/admin/saving").hasRole("ADMIN")
                 .antMatchers(HttpMethod.POST, "/admin/credit-card").hasRole("ADMIN")
                 .antMatchers(HttpMethod.PATCH, "/admin/account-balance/*").hasRole("ADMIN")
+                .antMatchers(HttpMethod.GET, "/account/*").hasRole("ACCOUNT_HOLDER")
                 .anyRequest().permitAll();
     }
 }

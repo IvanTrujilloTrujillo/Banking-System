@@ -24,7 +24,7 @@ public class CheckingController implements ICheckingController {
 
     @PostMapping("/admin/checking")
     @ResponseStatus(HttpStatus.CREATED)
-    public Checking createChecking(@RequestBody @Valid Checking checking) {
-        return checkingService.createChecking(checking);
+    public void createChecking(@RequestBody @Valid Checking checking) {
+        checkingService.createChecking(checking);
     }
 }

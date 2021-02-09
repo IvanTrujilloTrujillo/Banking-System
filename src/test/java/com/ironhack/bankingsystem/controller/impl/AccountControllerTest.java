@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -187,4 +188,36 @@ class AccountControllerTest {
                 .andExpect(status().isBadRequest())
                 .andReturn();
     }
+
+    @Test
+    @WithMockUser(username = "user1", password = "pwd", roles = "ACCOUNT_HOLDER")
+    public void getBalanceForAccount_ExistingIdAndCorrectUser_Balance() throws Exception {
+        List<Checking> checkings = checkingRepository.findAll();
+        Long id1 = checkings.get(0).getId();
+
+        MvcResult result = mockMvc.perform(get("/account/" + id1).characterEncoding("UTF-8"))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        assertTrue(result.getResponse().getContentAsString(StandardCharsets.UTF_8).contains("500"));
+    }
+
+    /*@Test
+    @WithMockUser(username = "user1", password = "pwd", roles = "ACCOUNT_HOLDER")
+    public void getBalanceForAccount_NotExistingIdAndCorrectUser_NotFound() throws Exception {
+        MvcResult result = mockMvc.perform(get("/account/100000").characterEncoding("UTF-8"))
+                .andExpect(status().isOk())
+                .andReturn();
+    }*/
+
+    /*@Test
+    @WithMockUser(username = "user1", password = "pwd", roles = "ACCOUNT_HOLDER")
+    public void getBalanceForAccount_ExistingIdAndIncorrectUser_Forbidden() throws Exception {
+        List<Checking> checkings = checkingRepository.findAll();
+        Long id1 = checkings.get(0).getId();
+
+        MvcResult result = mockMvc.perform(get("/account/" + id1).characterEncoding("UTF-8"))
+                .andExpect(status().isForbidden())
+                .andReturn();
+    }*/
 }

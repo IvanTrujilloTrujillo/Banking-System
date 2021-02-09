@@ -8,6 +8,9 @@ import com.ironhack.bankingsystem.repository.AccountRepository;
 import com.ironhack.bankingsystem.service.impl.AccountService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
@@ -31,5 +34,13 @@ public class AccountController implements IAccountController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void setAccountBalance(@PathVariable("id") Long id, @RequestBody @Valid BalanceDTO balance) {
         accountService.setAccountBalance(id, balance);
+    }
+
+    @GetMapping("/account/{id}")
+    @ResponseStatus(HttpStatus.OK)
+    public Money getBalanceForAccount(@PathVariable("id") Long id) {
+        UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication()
+                .getPrincipal();
+        return accountService.getBalanceForAccount(id, userDetails);
     }
 }

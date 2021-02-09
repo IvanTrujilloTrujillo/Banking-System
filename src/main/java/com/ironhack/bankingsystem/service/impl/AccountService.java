@@ -7,6 +7,7 @@ import com.ironhack.bankingsystem.repository.AccountRepository;
 import com.ironhack.bankingsystem.service.interfaces.IAccountService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -37,6 +38,19 @@ public class AccountService implements IAccountService {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "It isn't a supported ISO 4217 code");
             }
 
+        } else {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "The Account Id doesn't exist");
+        }
+    }
+
+    public Money getBalanceForAccount(Long id, UserDetails userDetails) {
+        if(accountRepository.existsById(id)) {
+            if(accountRepository.findById(id).get().getPrimaryOwner().getUsername().equals(userDetails.getUsername())) {
+                return accountRepository.findById(id).get().getBalance();
+            }
+            else {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You don´t have access to this account");
+            }
         } else {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "The Account Id doesn't exist");
         }
