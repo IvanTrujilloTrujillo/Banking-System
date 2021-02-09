@@ -3,10 +3,7 @@ package com.ironhack.bankingsystem.model;
 import com.ironhack.bankingsystem.classes.Money;
 import com.ironhack.bankingsystem.enums.Status;
 
-import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
-import javax.persistence.PrimaryKeyJoinColumn;
+import javax.persistence.*;
 import javax.validation.constraints.DecimalMax;
 import javax.validation.constraints.DecimalMin;
 import javax.validation.constraints.Digits;
@@ -18,10 +15,12 @@ import java.math.BigDecimal;
 public class Saving extends Account{
     @NotEmpty
     private String secretKey;
-    @Digits(integer = 8, fraction = 2, message = "The minimum balance must have two decimals")
-    @DecimalMax(value = "1000", message = "The minimum balance must be smaller or equal than 1000")
-    @DecimalMin(value = "100", message = "The minimum balance must be greater or equal than 100")
-    private BigDecimal minimumBalance = new BigDecimal("1000");
+    @Embedded
+    @AttributeOverrides({
+            @AttributeOverride(name="currency",column=@Column(name="minimum_balance_currency")),
+            @AttributeOverride(name="amount",column=@Column(name="minimum_balance_amount")),
+    })
+    private Money minimumBalance;
     @Enumerated(EnumType.STRING)
     private Status status = Status.ACTIVE;
     @Digits(integer = 2, fraction = 4, message = "The interest rate must have four decimals")
@@ -32,28 +31,72 @@ public class Saving extends Account{
     public Saving() {
     }
 
-    public Saving(Money balance, AccountHolder primaryOwner, AccountHolder secondaryOwner, String secretKey, BigDecimal minimumBalance, BigDecimal interestRate) {
+    public Saving(Money balance, AccountHolder primaryOwner, AccountHolder secondaryOwner, String secretKey, Money minimumBalance, BigDecimal interestRate) {
         super(balance, primaryOwner, secondaryOwner);
         setSecretKey(secretKey);
-        setMinimumBalance(minimumBalance);
+        try {
+            setMinimumBalance(minimumBalance);
+        } catch (IllegalArgumentException e) {
+            setMinimumBalance(new Money(BigDecimal.valueOf(1000), minimumBalance.getCurrency()));
+        }
+        setInterestRate(interestRate);
+    }
+
+    public Saving(Money balance, AccountHolder primaryOwner, AccountHolder secondaryOwner, String secretKey, Money minimumBalance) {
+        super(balance, primaryOwner, secondaryOwner);
+        setSecretKey(secretKey);
+        try {
+            setMinimumBalance(minimumBalance);
+        } catch (IllegalArgumentException e) {
+            setMinimumBalance(new Money(BigDecimal.valueOf(1000), minimumBalance.getCurrency()));
+        }
+    }
+
+    public Saving(Money balance, AccountHolder primaryOwner, AccountHolder secondaryOwner, String secretKey, BigDecimal interestRate) {
+        super(balance, primaryOwner, secondaryOwner);
+        setSecretKey(secretKey);
+        setMinimumBalance(new Money(BigDecimal.valueOf(1000), balance.getCurrency()));
         setInterestRate(interestRate);
     }
 
     public Saving(Money balance, AccountHolder primaryOwner, AccountHolder secondaryOwner, String secretKey) {
         super(balance, primaryOwner, secondaryOwner);
-        this.secretKey = secretKey;
+        setSecretKey(secretKey);
+        setMinimumBalance(new Money(BigDecimal.valueOf(1000), balance.getCurrency()));
     }
 
-    public Saving(Money balance, AccountHolder primaryOwner, String secretKey, BigDecimal minimumBalance, BigDecimal interestRate) {
+    public Saving(Money balance, AccountHolder primaryOwner, String secretKey, Money minimumBalance, BigDecimal interestRate) {
         super(balance, primaryOwner);
         setSecretKey(secretKey);
-        setMinimumBalance(minimumBalance);
+        try {
+            setMinimumBalance(minimumBalance);
+        } catch (IllegalArgumentException e) {
+            setMinimumBalance(new Money(BigDecimal.valueOf(1000), minimumBalance.getCurrency()));
+        }
+        setInterestRate(interestRate);
+    }
+
+    public Saving(Money balance, AccountHolder primaryOwner, String secretKey, Money minimumBalance) {
+        super(balance, primaryOwner);
+        setSecretKey(secretKey);
+        try {
+            setMinimumBalance(minimumBalance);
+        } catch (IllegalArgumentException e) {
+            setMinimumBalance(new Money(BigDecimal.valueOf(1000), minimumBalance.getCurrency()));
+        }
+    }
+
+    public Saving(Money balance, AccountHolder primaryOwner, String secretKey, BigDecimal interestRate) {
+        super(balance, primaryOwner);
+        setSecretKey(secretKey);
+        setMinimumBalance(new Money(BigDecimal.valueOf(1000), balance.getCurrency()));
         setInterestRate(interestRate);
     }
 
     public Saving(Money balance, AccountHolder primaryOwner, String secretKey) {
         super(balance, primaryOwner);
-        this.secretKey = secretKey;
+        setSecretKey(secretKey);
+        setMinimumBalance(new Money(BigDecimal.valueOf(1000), balance.getCurrency()));
     }
 
     public String getSecretKey() {
@@ -64,12 +107,17 @@ public class Saving extends Account{
         this.secretKey = secretKey;
     }
 
-    public BigDecimal getMinimumBalance() {
+    public Money getMinimumBalance() {
         return minimumBalance;
     }
 
-    public void setMinimumBalance(BigDecimal minimumBalance) {
-        this.minimumBalance = minimumBalance;
+    public void setMinimumBalance(Money minimumBalance) {
+        if(minimumBalance.getAmount().compareTo(BigDecimal.valueOf(100)) < 0 ||
+                minimumBalance.getAmount().compareTo(BigDecimal.valueOf(1000)) > 0) {
+            throw new IllegalArgumentException("The minimum balance must be between 100 and 1,000");
+        } else {
+            this.minimumBalance = minimumBalance;
+        }
     }
 
     public Status getStatus() {

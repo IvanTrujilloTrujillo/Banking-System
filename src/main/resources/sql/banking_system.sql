@@ -42,12 +42,15 @@ CREATE TABLE role (
 
 CREATE TABLE account (
 	id BIGINT NOT NULL AUTO_INCREMENT,
-    currency VARCHAR(255),
-    amount DECIMAL(19,2),
+    balance_currency VARCHAR(255),
+    balance_amount DECIMAL(19,2),
     primary_owner_id BIGINT,
     secondary_owner_id BIGINT,
+    penalty_fee_currency VARCHAR(255),
+    penalty_fee_amount DECIMAL(19,2),
     creation_date DATE,
-    max_limit_transactions DECIMAL(19,2),
+    max_limit_transactions_currency VARCHAR(255),
+    max_limit_transactions_amount DECIMAL(19,2),
     PRIMARY KEY (id),
     FOREIGN KEY (primary_owner_id) REFERENCES account_holder(id),
     FOREIGN KEY (secondary_owner_id) REFERENCES account_holder(id)
@@ -57,6 +60,10 @@ CREATE TABLE checking (
 	id BIGINT NOT NULL AUTO_INCREMENT,
 	secret_key VARCHAR(255),
     status VARCHAR(30),
+    minimum_balance_currency VARCHAR(255),
+    minimum_balance_amount DECIMAL(19,2),
+    monthly_maintenance_fee_currency VARCHAR(255),
+    monthly_maintenance_fee_amount DECIMAL(19,2),
     PRIMARY KEY (id),
     FOREIGN KEY (id) REFERENCES account(id)
 ) ENGINE InnoDB;
@@ -72,7 +79,8 @@ CREATE TABLE student_checking (
 CREATE TABLE saving (
 	id BIGINT NOT NULL AUTO_INCREMENT,
 	secret_key VARCHAR(255),
-    minimum_balance DECIMAL(19,2),
+    minimum_balance_currency VARCHAR(255),
+    minimum_balance_amount DECIMAL(19,2),
     status VARCHAR(30),
     interest_rate DECIMAL(19,2),
     PRIMARY KEY (id),
@@ -81,7 +89,8 @@ CREATE TABLE saving (
 
 CREATE TABLE credit_card (
 	id BIGINT NOT NULL AUTO_INCREMENT,
-    credit_limit DECIMAL(19,2),
+    credit_limit_currency VARCHAR(255),
+    credit_limit_amount DECIMAL(19,2),
     interest_rate DECIMAL(19,2),
     PRIMARY KEY (id),
     FOREIGN KEY (id) REFERENCES account(id)

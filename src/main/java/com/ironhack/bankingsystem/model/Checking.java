@@ -6,18 +6,28 @@ import com.ironhack.bankingsystem.enums.Status;
 import javax.persistence.*;
 import javax.validation.constraints.NotEmpty;
 import java.math.BigDecimal;
+import java.util.Currency;
 
 @Entity
 @PrimaryKeyJoinColumn(name = "id")
 public class Checking extends Account{
 
-    private static final BigDecimal MINIMUM_BALANCE = new BigDecimal("250");
-    private static final BigDecimal MONTHLY_MAINTENANCE_FEE = new BigDecimal("12");
-
     @NotEmpty
     private String secretKey;
     @Enumerated(EnumType.STRING)
     private Status status = Status.ACTIVE;
+    @Embedded
+    @AttributeOverrides({
+            @AttributeOverride(name="currency",column=@Column(name="minimum_balance_currency")),
+            @AttributeOverride(name="amount",column=@Column(name="minimum_balance_amount")),
+    })
+    private Money minimumBalance;
+    @Embedded
+    @AttributeOverrides({
+            @AttributeOverride(name="currency",column=@Column(name="monthly_maintenance_fee_currency")),
+            @AttributeOverride(name="amount",column=@Column(name="monthly_maintenance_fee_amount")),
+    })
+    private Money monthlyMaintenanceFee;
 
     public Checking() {
     }
@@ -25,11 +35,15 @@ public class Checking extends Account{
     public Checking(Money balance, AccountHolder primaryOwner, AccountHolder secondaryOwner, String secretKey) {
         super(balance, primaryOwner, secondaryOwner);
         setSecretKey(secretKey);
+        setMinimumBalance(balance.getCurrency());
+        setMonthlyMaintenanceFee(balance.getCurrency());
     }
 
     public Checking(Money balance, AccountHolder primaryOwner, String secretKey) {
         super(balance, primaryOwner);
         setSecretKey(secretKey);
+        setMinimumBalance(balance.getCurrency());
+        setMonthlyMaintenanceFee(balance.getCurrency());
     }
 
     public String getSecretKey() {
@@ -40,19 +54,27 @@ public class Checking extends Account{
         this.secretKey = secretKey;
     }
 
-    public BigDecimal getMinimumBalance() {
-        return MINIMUM_BALANCE;
-    }
-
-    public BigDecimal getMonthlyMaintenanceFee() {
-        return MONTHLY_MAINTENANCE_FEE;
-    }
-
     public Status getStatus() {
         return status;
     }
 
     public void setStatus(Status status) {
         this.status = status;
+    }
+
+    public Money getMinimumBalance() {
+        return minimumBalance;
+    }
+
+    public void setMinimumBalance(Currency currency) {
+        this.minimumBalance = new Money(BigDecimal.valueOf(250), currency);
+    }
+
+    public Money getMonthlyMaintenanceFee() {
+        return monthlyMaintenanceFee;
+    }
+
+    public void setMonthlyMaintenanceFee(Currency currency) {
+        this.monthlyMaintenanceFee = new Money(BigDecimal.valueOf(12), currency);
     }
 }

@@ -2,8 +2,7 @@ package com.ironhack.bankingsystem.model;
 
 import com.ironhack.bankingsystem.classes.Money;
 
-import javax.persistence.Entity;
-import javax.persistence.PrimaryKeyJoinColumn;
+import javax.persistence.*;
 import javax.validation.constraints.DecimalMax;
 import javax.validation.constraints.DecimalMin;
 import javax.validation.constraints.Digits;
@@ -12,10 +11,13 @@ import java.math.BigDecimal;
 @Entity
 @PrimaryKeyJoinColumn(name = "id")
 public class CreditCard extends Account{
-    @Digits(integer = 8, fraction = 2, message = "The credit limit must have two decimals")
-    @DecimalMax(value = "100000", message = "The credit limit must be smaller or equal than 100,000")
-    @DecimalMin(value = "100", message = "The credit limit must be greater or equal than 100")
-    private BigDecimal creditLimit = new BigDecimal("100");
+
+    @Embedded
+    @AttributeOverrides({
+            @AttributeOverride(name="currency",column=@Column(name="credit_limit_currency")),
+            @AttributeOverride(name="amount",column=@Column(name="credit_limit_amount")),
+    })
+    private Money creditLimit;
     @Digits(integer = 2, fraction = 2, message = "The interest rate must have two decimals")
     @DecimalMax(value = "0.2", message = "The interest rate must be smaller or equal than 0.2")
     @DecimalMin(value = "0.1", message = "The interest rate must be greater or equal than 0.1")
@@ -24,32 +26,77 @@ public class CreditCard extends Account{
     public CreditCard() {
     }
 
-    public CreditCard(Money balance, AccountHolder primaryOwner, AccountHolder secondaryOwner, BigDecimal creditLimit, BigDecimal interestRate) {
+    public CreditCard(Money balance, AccountHolder primaryOwner, AccountHolder secondaryOwner, Money creditLimit, BigDecimal interestRate) {
         super(balance, primaryOwner, secondaryOwner);
-        setCreditLimit(creditLimit);
+        try {
+            setCreditLimit(creditLimit);
+        } catch (IllegalArgumentException e) {
+            setCreditLimit(new Money(BigDecimal.valueOf(100), creditLimit.getCurrency()));
+        }
+        setInterestRate(interestRate);
+    }
+
+    public CreditCard(Money balance, AccountHolder primaryOwner, AccountHolder secondaryOwner, Money creditLimit) {
+        super(balance, primaryOwner, secondaryOwner);
+        try {
+            setCreditLimit(creditLimit);
+        } catch (IllegalArgumentException e) {
+            setCreditLimit(new Money(BigDecimal.valueOf(100), creditLimit.getCurrency()));
+        }
+    }
+
+    public CreditCard(Money balance, AccountHolder primaryOwner, AccountHolder secondaryOwner, BigDecimal interestRate) {
+        super(balance, primaryOwner, secondaryOwner);
+        setCreditLimit(new Money(BigDecimal.valueOf(100), balance.getCurrency()));
         setInterestRate(interestRate);
     }
 
     public CreditCard(Money balance, AccountHolder primaryOwner, AccountHolder secondaryOwner) {
         super(balance, primaryOwner, secondaryOwner);
+        setCreditLimit(new Money(BigDecimal.valueOf(100), balance.getCurrency()));
     }
 
-    public CreditCard(Money balance, AccountHolder primaryOwner, BigDecimal creditLimit, BigDecimal interestRate) {
+    public CreditCard(Money balance, AccountHolder primaryOwner, Money creditLimit, BigDecimal interestRate) {
         super(balance, primaryOwner);
-        setCreditLimit(creditLimit);
+        try {
+            setCreditLimit(creditLimit);
+        } catch (IllegalArgumentException e) {
+            setCreditLimit(new Money(BigDecimal.valueOf(100), creditLimit.getCurrency()));
+        }
+        setInterestRate(interestRate);
+    }
+
+    public CreditCard(Money balance, AccountHolder primaryOwner, Money creditLimit) {
+        super(balance, primaryOwner);
+        try {
+            setCreditLimit(creditLimit);
+        } catch (IllegalArgumentException e) {
+            setCreditLimit(new Money(BigDecimal.valueOf(100), creditLimit.getCurrency()));
+        }
+    }
+
+    public CreditCard(Money balance, AccountHolder primaryOwner, BigDecimal interestRate) {
+        super(balance, primaryOwner);
+        setCreditLimit(new Money(BigDecimal.valueOf(100), balance.getCurrency()));
         setInterestRate(interestRate);
     }
 
     public CreditCard(Money balance, AccountHolder primaryOwner) {
         super(balance, primaryOwner);
+        setCreditLimit(new Money(BigDecimal.valueOf(100), balance.getCurrency()));
     }
 
-    public BigDecimal getCreditLimit() {
+    public Money getCreditLimit() {
         return creditLimit;
     }
 
-    public void setCreditLimit(BigDecimal creditLimit) {
-        this.creditLimit = creditLimit;
+    public void setCreditLimit(Money creditLimit) {
+        if(creditLimit.getAmount().compareTo(BigDecimal.valueOf(100)) < 0 ||
+                creditLimit.getAmount().compareTo(BigDecimal.valueOf(100000)) > 0) {
+            throw new IllegalArgumentException("The credit limit must be between 100 and 100,000");
+        } else {
+            this.creditLimit = creditLimit;
+        }
     }
 
     public BigDecimal getInterestRate() {

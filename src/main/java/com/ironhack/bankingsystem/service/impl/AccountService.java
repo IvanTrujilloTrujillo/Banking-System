@@ -11,6 +11,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.math.BigDecimal;
 import java.util.Currency;
 
 @Service
@@ -46,6 +47,11 @@ public class AccountService implements IAccountService {
     public Money getBalanceForAccount(Long id, UserDetails userDetails) {
         if(accountRepository.existsById(id)) {
             if(accountRepository.findById(id).get().getPrimaryOwner().getUsername().equals(userDetails.getUsername())) {
+                if(accountRepository.findById(id).get().getBalance().getAmount().compareTo(
+                        accountRepository.findById(id).get().getPenaltyFee().getAmount()) < 0) {
+                    accountRepository.findById(id).get().getBalance().decreaseAmount(
+                            accountRepository.findById(id).get().getPenaltyFee().getAmount());
+                }
                 return accountRepository.findById(id).get().getBalance();
             }
             else {

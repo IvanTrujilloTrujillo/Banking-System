@@ -6,17 +6,19 @@ import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Currency;
 
 @Entity
 @Inheritance(strategy = InheritanceType.JOINED)
 public abstract class Account {
-
-    private static final Integer PENALTY_FEE = 40;
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     @Embedded
+    @AttributeOverrides({
+            @AttributeOverride(name="currency",column=@Column(name="balance_currency")),
+            @AttributeOverride(name="amount",column=@Column(name="balance_amount")),
+    })
     @NotNull
     private Money balance;
     @OneToOne
@@ -24,8 +26,19 @@ public abstract class Account {
     private AccountHolder primaryOwner;
     @OneToOne
     private AccountHolder secondaryOwner;
+    @Embedded
+    @AttributeOverrides({
+            @AttributeOverride(name="currency",column=@Column(name="penalty_fee_currency")),
+            @AttributeOverride(name="amount",column=@Column(name="penalty_fee_amount")),
+    })
+    private Money penaltyFee;
     private LocalDateTime creationDate;
-    private BigDecimal maxLimitTransactions = new BigDecimal("100");
+    @Embedded
+    @AttributeOverrides({
+            @AttributeOverride(name="currency",column=@Column(name="max_limit_transactions_currency")),
+            @AttributeOverride(name="amount",column=@Column(name="max_limit_transactions_amount")),
+    })
+    private Money maxLimitTransactions;
 
     public Account() {
     }
@@ -34,17 +47,15 @@ public abstract class Account {
         setBalance(balance);
         setPrimaryOwner(primaryOwner);
         setSecondaryOwner(secondaryOwner);
-        this.creationDate = LocalDateTime.now();
+        setCreationDate();
+        setPenaltyFee();
     }
 
     public Account(Money balance, AccountHolder primaryOwner) {
         setBalance(balance);
         setPrimaryOwner(primaryOwner);
-        this.creationDate = LocalDateTime.now();
-    }
-
-    public Integer getPenaltyFee() {
-        return PENALTY_FEE;
+        setCreationDate();
+        setPenaltyFee();
     }
 
     public Long getId() {
@@ -79,7 +90,19 @@ public abstract class Account {
         this.secondaryOwner = secondaryOwner;
     }
 
+    public Money getPenaltyFee() {
+        return penaltyFee;
+    }
+
+    public void setPenaltyFee() {
+        this.penaltyFee = new Money(BigDecimal.valueOf(40), this.balance.getCurrency());
+    }
+
     public LocalDateTime getCreationDate() {
         return creationDate;
+    }
+
+    public void setCreationDate() {
+        this.creationDate = LocalDateTime.now();
     }
 }
