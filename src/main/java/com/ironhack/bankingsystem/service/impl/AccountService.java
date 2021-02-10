@@ -3,6 +3,7 @@ package com.ironhack.bankingsystem.service.impl;
 import com.ironhack.bankingsystem.classes.Money;
 import com.ironhack.bankingsystem.controller.dtos.BalanceDTO;
 import com.ironhack.bankingsystem.controller.dtos.MoneyDTO;
+import com.ironhack.bankingsystem.enums.Status;
 import com.ironhack.bankingsystem.model.Account;
 import com.ironhack.bankingsystem.model.Saving;
 import com.ironhack.bankingsystem.model.Transaction;
@@ -69,57 +70,71 @@ public class AccountService implements IAccountService {
 
     public Money getBalanceForAccount(Long id, UserDetails userDetails) {
         if(accountRepository.existsById(id)) {
+
+            Status status = Status.ACTIVE;
+            if(checkingRepository.existsById(id)){
+                status = checkingRepository.findById(id).get().getStatus();
+            } else if (studentCheckingRepository.existsById(id)){
+                status = studentCheckingRepository.findById(id).get().getStatus();
+            } else if (savingRepository.existsById(id)) {
+                status = savingRepository.findById(id).get().getStatus();
+            }
+
             if(accountRepository.findById(id).get().getPrimaryOwner().getUsername().equals(userDetails.getUsername()) ||
                     (accountRepository.findById(id).get().getSecondaryOwner() != null &&
                      accountRepository.findById(id).get().getSecondaryOwner().getUsername().equals(userDetails.getUsername()))) {
-                if(checkingRepository.existsById(id)) {
-                    if(checkingRepository.findById(id).get().getBalance().getAmount().compareTo(
-                            checkingRepository.findById(id).get().getMinimumBalance().getAmount()) < 0) {
+                if(status == Status.ACTIVE) {
+                    if (checkingRepository.existsById(id)) {
+                        if (checkingRepository.findById(id).get().getBalance().getAmount().compareTo(
+                                checkingRepository.findById(id).get().getMinimumBalance().getAmount()) < 0) {
 
-                        checkingRepository.findById(id).get().getBalance().decreaseAmount(
-                                checkingRepository.findById(id).get().getPenaltyFee());
-                        checkingRepository.save(checkingRepository.findById(id).get());
+                            checkingRepository.findById(id).get().getBalance().decreaseAmount(
+                                    checkingRepository.findById(id).get().getPenaltyFee());
+                            checkingRepository.save(checkingRepository.findById(id).get());
 
+                        }
+                    } else if (savingRepository.existsById(id)) {
+                        if (ChronoUnit.YEARS.between(savingRepository.findById(id).get().getLastInterestAddedDate(), LocalDateTime.now()) > 1) {
+
+                            BigDecimal amount = savingRepository.findById(id).get().getBalance().getAmount();
+                            amount = amount.add(amount.multiply(savingRepository.findById(id).get().getInterestRate()));
+                            savingRepository.findById(id).get().setBalance(
+                                    new Money(amount, savingRepository.findById(id).get().getBalance().getCurrency()));
+
+                            savingRepository.findById(id).get().setLastInterestAddedDate(LocalDateTime.now());
+
+                            savingRepository.save(savingRepository.findById(id).get());
+
+                        }
+
+                        if (savingRepository.findById(id).get().getBalance().getAmount().compareTo(
+                                savingRepository.findById(id).get().getMinimumBalance().getAmount()) < 0) {
+
+                            savingRepository.findById(id).get().getBalance().decreaseAmount(
+                                    savingRepository.findById(id).get().getPenaltyFee());
+                            savingRepository.save(savingRepository.findById(id).get());
+
+                        }
+                    } else if (creditCardRepository.existsById(id)) {
+                        if (ChronoUnit.MONTHS.between(creditCardRepository.findById(id).get().getLastInterestAddedDate(), LocalDateTime.now()) > 1) {
+
+                            BigDecimal amount = creditCardRepository.findById(id).get().getBalance().getAmount();
+                            amount = amount.add(amount.multiply(
+                                    creditCardRepository.findById(id).get().getInterestRate().divide(BigDecimal.valueOf(12))));
+                            creditCardRepository.findById(id).get().setBalance(
+                                    new Money(amount, creditCardRepository.findById(id).get().getBalance().getCurrency()));
+
+                            creditCardRepository.findById(id).get().setLastInterestAddedDate(LocalDateTime.now());
+
+                            creditCardRepository.save(creditCardRepository.findById(id).get());
+
+                        }
                     }
-                } else if (savingRepository.existsById(id)) {
-                    if(ChronoUnit.YEARS.between(savingRepository.findById(id).get().getLastInterestAddedDate(), LocalDateTime.now()) > 1) {
 
-                        BigDecimal amount = savingRepository.findById(id).get().getBalance().getAmount();
-                        amount = amount.add(amount.multiply(savingRepository.findById(id).get().getInterestRate()));
-                        savingRepository.findById(id).get().setBalance(
-                                new Money(amount, savingRepository.findById(id).get().getBalance().getCurrency()));
-
-                        savingRepository.findById(id).get().setLastInterestAddedDate(LocalDateTime.now());
-
-                        savingRepository.save(savingRepository.findById(id).get());
-
-                    }
-
-                    if(savingRepository.findById(id).get().getBalance().getAmount().compareTo(
-                            savingRepository.findById(id).get().getMinimumBalance().getAmount()) < 0) {
-
-                        savingRepository.findById(id).get().getBalance().decreaseAmount(
-                                savingRepository.findById(id).get().getPenaltyFee());
-                        savingRepository.save(savingRepository.findById(id).get());
-
-                    }
-                } else if (creditCardRepository.existsById(id)) {
-                    if(ChronoUnit.MONTHS.between(creditCardRepository.findById(id).get().getLastInterestAddedDate(), LocalDateTime.now()) > 1) {
-
-                        BigDecimal amount = creditCardRepository.findById(id).get().getBalance().getAmount();
-                        amount = amount.add(amount.multiply(
-                                creditCardRepository.findById(id).get().getInterestRate().divide(BigDecimal.valueOf(12))));
-                        creditCardRepository.findById(id).get().setBalance(
-                                new Money(amount, creditCardRepository.findById(id).get().getBalance().getCurrency()));
-
-                        creditCardRepository.findById(id).get().setLastInterestAddedDate(LocalDateTime.now());
-
-                        creditCardRepository.save(creditCardRepository.findById(id).get());
-
-                    }
+                    return accountRepository.findById(id).get().getBalance();
+                } else {
+                    throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Your account is frozen. Contact with an admin");
                 }
-
-                return accountRepository.findById(id).get().getBalance();
             }
             else {
                 throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You don´t have access to this account");
@@ -131,8 +146,9 @@ public class AccountService implements IAccountService {
 
     public void transferMoney(Transaction transaction, UserDetails userDetails) {
         Account senderAccount;
+
         if (accountRepository.existsById(transaction.getSenderAccount().getId())) {
-            senderAccount = accountRepository.getOne(transaction.getSenderAccount().getId());
+            senderAccount = accountRepository.findById(transaction.getSenderAccount().getId()).get();
         } else {
             throw new ResponseStatusException(HttpStatus.NOT_ACCEPTABLE, "The sender account doesn't exist");
         }
@@ -141,29 +157,61 @@ public class AccountService implements IAccountService {
         if(senderAccount.getPrimaryOwner().getUsername().equals(userDetails.getUsername()) ||
                 (senderAccount.getSecondaryOwner() != null &&
                  senderAccount.getSecondaryOwner().getUsername().equals(userDetails.getUsername()))) {
-            if(transaction.getAmount().getAmount().compareTo(
-                    senderAccount.getBalance().getAmount()) < 0) {
-                if(accountRepository.existsById(receiverAccountId)) {
-                    if (accountRepository.findById(receiverAccountId).get().getPrimaryOwner().getName().equals(
-                            transaction.getReceiverAccountHolderName()) ||
-                            (accountRepository.findById(receiverAccountId).get().getSecondaryOwner() != null &&
-                             accountRepository.findById(receiverAccountId).get().getSecondaryOwner().getName().equals(
-                             transaction.getReceiverAccountHolderName()))) {
-                        senderAccount.getBalance().decreaseAmount(transaction.getAmount());
-                        accountRepository.save(senderAccount);
-                        accountRepository.findById(receiverAccountId).get().getBalance().increaseAmount(transaction.getAmount());
-                        transaction.setTransactionDate(LocalDateTime.now());
-                        transactionRepository.save(transaction);
+
+            Status status = Status.ACTIVE;
+            if(checkingRepository.existsById(transaction.getSenderAccount().getId())){
+                status = checkingRepository.findById(transaction.getSenderAccount().getId()).get().getStatus();
+            } else if (studentCheckingRepository.existsById(transaction.getSenderAccount().getId())){
+                status = studentCheckingRepository.findById(transaction.getSenderAccount().getId()).get().getStatus();
+            } else if (savingRepository.existsById(transaction.getSenderAccount().getId())) {
+                status = savingRepository.findById(transaction.getSenderAccount().getId()).get().getStatus();
+            }
+
+            if(status == Status.ACTIVE) {
+                if(ChronoUnit.SECONDS.between(transactionRepository.findLastTransactionBySenderAccount(senderAccount), LocalDateTime.now()) > 0) {
+                    if (transaction.getAmount().getAmount().compareTo(
+                            senderAccount.getBalance().getAmount()) < 0) {
+                        if (accountRepository.existsById(receiverAccountId)) {
+                            if (accountRepository.findById(receiverAccountId).get().getPrimaryOwner().getName().equals(
+                                    transaction.getReceiverAccountHolderName()) ||
+                                    (accountRepository.findById(receiverAccountId).get().getSecondaryOwner() != null &&
+                                            accountRepository.findById(receiverAccountId).get().getSecondaryOwner().getName().equals(
+                                                    transaction.getReceiverAccountHolderName()))) {
+
+                                senderAccount.getBalance().decreaseAmount(transaction.getAmount());
+                                accountRepository.save(senderAccount);
+                                accountRepository.findById(receiverAccountId).get().getBalance().increaseAmount(transaction.getAmount());
+                                transaction.setTransactionDate(LocalDateTime.now());
+                                transactionRepository.save(transaction);
+
+                            } else {
+                                throw new ResponseStatusException(HttpStatus.NOT_ACCEPTABLE, "The receiver name doesn't match " +
+                                        "with the owners of the Account Id");
+                            }
+                        } else {
+                            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "The Account Id of the receiver " +
+                                    "doesn't exist");
+                        }
                     } else {
-                        throw new ResponseStatusException(HttpStatus.NOT_ACCEPTABLE, "The receiver name doesn't match " +
-                                "with the owners of the Account Id");
+                        throw new ResponseStatusException(HttpStatus.NOT_ACCEPTABLE, "You don´t have enough balance");
                     }
                 } else {
-                    throw new ResponseStatusException(HttpStatus.NOT_FOUND, "The Account Id of the receiver " +
-                            "doesn't exist");
+                    if(checkingRepository.existsById(transaction.getSenderAccount().getId())){
+                        checkingRepository.findById(transaction.getSenderAccount().getId()).get().setStatus(Status.FROZEN);
+                        checkingRepository.save(checkingRepository.findById(transaction.getSenderAccount().getId()).get());
+                    } else if (studentCheckingRepository.existsById(transaction.getSenderAccount().getId())){
+                        studentCheckingRepository.findById(transaction.getSenderAccount().getId()).get().setStatus(Status.FROZEN);
+                        studentCheckingRepository.save(studentCheckingRepository.findById(transaction.getSenderAccount().getId()).get());
+                    } else if (savingRepository.existsById(transaction.getSenderAccount().getId())) {
+                        savingRepository.findById(transaction.getSenderAccount().getId()).get().setStatus(Status.FROZEN);
+                        savingRepository.save(savingRepository.findById(transaction.getSenderAccount().getId()).get());
+                    }
+
+                    throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You have tried to make two transaction " +
+                            "in 1 second, your account would be frozen. Contact with an admin");
                 }
             } else {
-                throw new ResponseStatusException(HttpStatus.NOT_ACCEPTABLE, "You don´t have enough balance");
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Your account is frozen. Contact with an admin");
             }
         } else {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You don´t have access to the sender account");
@@ -174,42 +222,59 @@ public class AccountService implements IAccountService {
         if(accountRepository.existsById(id)) {
             if(thirdPartyRepository.findByHashedKey(hashedKey).isPresent()) {
                 if(userDetails.getUsername().equals(thirdPartyRepository.findByHashedKey(hashedKey).get().getUsername())) {
-                    if(accountRepository.findById(id).get().getBalance().getAmount().compareTo(amount.getAmount()) > 0) {
-                        if(checkingRepository.existsById(id)) {
-                            if (checkingRepository.findById(id).get().getSecretKey().equals(secretKey)) {
-                                Account account = accountRepository.findById(id).get();
-                                account.getBalance().decreaseAmount(amount.getAmount());
-                                accountRepository.save(account);
-                                //accountRepository.findById(id).get().getBalance().decreaseAmount(amount.getAmount());
+
+                    Status status = Status.ACTIVE;
+                    if(checkingRepository.existsById(id)){
+                        status = checkingRepository.findById(id).get().getStatus();
+                    } else if (studentCheckingRepository.existsById(id)){
+                        status = studentCheckingRepository.findById(id).get().getStatus();
+                    } else if (savingRepository.existsById(id)) {
+                        status = savingRepository.findById(id).get().getStatus();
+                    }
+
+                    if(status == Status.ACTIVE) {
+                        if (accountRepository.findById(id).get().getBalance().getAmount().compareTo(amount.getAmount()) > 0) {
+                            if (checkingRepository.existsById(id)) {
+                                if (checkingRepository.findById(id).get().getSecretKey().equals(secretKey)) {
+
+                                    Account account = accountRepository.findById(id).get();
+                                    account.getBalance().decreaseAmount(amount.getAmount());
+                                    accountRepository.save(account);
+
+                                } else {
+                                    throw new ResponseStatusException(HttpStatus.NOT_ACCEPTABLE, "The Secret Key doesn't match " +
+                                            "with the Account");
+                                }
+                            } else if (studentCheckingRepository.existsById(id)) {
+                                if (studentCheckingRepository.findById(id).get().getSecretKey().equals(secretKey)) {
+
+                                    Account account = accountRepository.findById(id).get();
+                                    account.getBalance().decreaseAmount(amount.getAmount());
+                                    accountRepository.save(account);
+
+                                } else {
+                                    throw new ResponseStatusException(HttpStatus.NOT_ACCEPTABLE, "The Secret Key doesn't match " +
+                                            "with the Account");
+                                }
+                            } else if (savingRepository.existsById(id)) {
+                                if (savingRepository.findById(id).get().getSecretKey().equals(secretKey)) {
+
+                                    Account account = accountRepository.findById(id).get();
+                                    account.getBalance().decreaseAmount(amount.getAmount());
+                                    accountRepository.save(account);
+
+                                } else {
+                                    throw new ResponseStatusException(HttpStatus.NOT_ACCEPTABLE, "The Secret Key doesn't match " +
+                                            "with the Account");
+                                }
                             } else {
-                                throw new ResponseStatusException(HttpStatus.NOT_ACCEPTABLE, "The Secret Key doesn't match " +
-                                        "with the Account");
-                            }
-                        } else if(studentCheckingRepository.existsById(id)) {
-                            if (studentCheckingRepository.findById(id).get().getSecretKey().equals(secretKey)) {
-                                Account account = accountRepository.findById(id).get();
-                                account.getBalance().decreaseAmount(amount.getAmount());
-                                accountRepository.save(account);
-                                //accountRepository.findById(id).get().getBalance().decreaseAmount(amount.getAmount());
-                            } else {
-                                throw new ResponseStatusException(HttpStatus.NOT_ACCEPTABLE, "The Secret Key doesn't match " +
-                                        "with the Account");
-                            }
-                        } else if(savingRepository.existsById(id)) {
-                            if (savingRepository.findById(id).get().getSecretKey().equals(secretKey)) {
-                                Account account = accountRepository.findById(id).get();
-                                account.getBalance().decreaseAmount(amount.getAmount());
-                                accountRepository.save(account);
-                                //accountRepository.findById(id).get().getBalance().decreaseAmount(amount.getAmount());
-                            } else {
-                                throw new ResponseStatusException(HttpStatus.NOT_ACCEPTABLE, "The Secret Key doesn't match " +
-                                        "with the Account");
+                                throw new ResponseStatusException(HttpStatus.NOT_ACCEPTABLE, "You can't receive from a Credit Card");
                             }
                         } else {
-                            throw new ResponseStatusException(HttpStatus.NOT_ACCEPTABLE, "You can't receive from a Credit Card");
+                            throw new ResponseStatusException(HttpStatus.NOT_ACCEPTABLE, "Not enough balance");
                         }
                     } else {
-                        throw new ResponseStatusException(HttpStatus.NOT_ACCEPTABLE, "Not enough balance");
+                        throw new ResponseStatusException(HttpStatus.NOT_ACCEPTABLE, "The sender's account is frozen");
                     }
                 } else {
                     throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You don´t have access to the Third Party account");
@@ -226,38 +291,55 @@ public class AccountService implements IAccountService {
         if(accountRepository.existsById(id)) {
             if(thirdPartyRepository.findByHashedKey(hashedKey).isPresent()) {
                 if(userDetails.getUsername().equals(thirdPartyRepository.findByHashedKey(hashedKey).get().getUsername())) {
-                    if(checkingRepository.existsById(id)) {
-                        if (checkingRepository.findById(id).get().getSecretKey().equals(secretKey)) {
-                            Account account = accountRepository.findById(id).get();
-                            account.getBalance().increaseAmount(amount.getAmount());
-                            accountRepository.save(account);
-                            //accountRepository.findById(id).get().getBalance().increaseAmount(amount.getAmount());
+
+                    Status status = Status.ACTIVE;
+                    if(checkingRepository.existsById(id)){
+                        status = checkingRepository.findById(id).get().getStatus();
+                    } else if (studentCheckingRepository.existsById(id)){
+                        status = studentCheckingRepository.findById(id).get().getStatus();
+                    } else if (savingRepository.existsById(id)) {
+                        status = savingRepository.findById(id).get().getStatus();
+                    }
+
+                    if(status == Status.ACTIVE) {
+                        if (checkingRepository.existsById(id)) {
+                            if (checkingRepository.findById(id).get().getSecretKey().equals(secretKey)) {
+
+                                Account account = accountRepository.findById(id).get();
+                                account.getBalance().increaseAmount(amount.getAmount());
+                                accountRepository.save(account);
+
+                            } else {
+                                throw new ResponseStatusException(HttpStatus.NOT_ACCEPTABLE, "The Secret Key doesn't match " +
+                                        "with the Account");
+                            }
+                        } else if (studentCheckingRepository.existsById(id)) {
+                            if (studentCheckingRepository.findById(id).get().getSecretKey().equals(secretKey)) {
+
+                                Account account = accountRepository.findById(id).get();
+                                account.getBalance().increaseAmount(amount.getAmount());
+                                accountRepository.save(account);
+
+                            } else {
+                                throw new ResponseStatusException(HttpStatus.NOT_ACCEPTABLE, "The Secret Key doesn't match " +
+                                        "with the Account");
+                            }
+                        } else if (savingRepository.existsById(id)) {
+                            if (savingRepository.findById(id).get().getSecretKey().equals(secretKey)) {
+
+                                Account account = accountRepository.findById(id).get();
+                                account.getBalance().increaseAmount(amount.getAmount());
+                                accountRepository.save(account);
+
+                            } else {
+                                throw new ResponseStatusException(HttpStatus.NOT_ACCEPTABLE, "The Secret Key doesn't match " +
+                                        "with the Account");
+                            }
                         } else {
-                            throw new ResponseStatusException(HttpStatus.NOT_ACCEPTABLE, "The Secret Key doesn't match " +
-                                    "with the Account");
-                        }
-                    } else if(studentCheckingRepository.existsById(id)) {
-                        if (studentCheckingRepository.findById(id).get().getSecretKey().equals(secretKey)) {
-                            Account account = accountRepository.findById(id).get();
-                            account.getBalance().increaseAmount(amount.getAmount());
-                            accountRepository.save(account);
-                            //accountRepository.findById(id).get().getBalance().increaseAmount(amount.getAmount());
-                        } else {
-                            throw new ResponseStatusException(HttpStatus.NOT_ACCEPTABLE, "The Secret Key doesn't match " +
-                                    "with the Account");
-                        }
-                    } else if(savingRepository.existsById(id)) {
-                        if (savingRepository.findById(id).get().getSecretKey().equals(secretKey)) {
-                            Account account = accountRepository.findById(id).get();
-                            account.getBalance().increaseAmount(amount.getAmount());
-                            accountRepository.save(account);
-                            //accountRepository.findById(id).get().getBalance().increaseAmount(amount.getAmount());
-                        } else {
-                            throw new ResponseStatusException(HttpStatus.NOT_ACCEPTABLE, "The Secret Key doesn't match " +
-                                    "with the Account");
+                            throw new ResponseStatusException(HttpStatus.NOT_ACCEPTABLE, "You can't send to a Credit Card");
                         }
                     } else {
-                        throw new ResponseStatusException(HttpStatus.NOT_ACCEPTABLE, "You can't send to a Credit Card");
+                        throw new ResponseStatusException(HttpStatus.NOT_ACCEPTABLE, "The receiver's account is frozen");
                     }
                 } else {
                     throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You don´t have access to the Third Party account");
