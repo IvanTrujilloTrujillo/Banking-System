@@ -1,5 +1,6 @@
 package com.ironhack.bankingsystem.service.impl;
 
+import com.ironhack.bankingsystem.classes.Money;
 import com.ironhack.bankingsystem.model.Checking;
 import com.ironhack.bankingsystem.model.StudentChecking;
 import com.ironhack.bankingsystem.repository.CheckingRepository;
@@ -27,7 +28,14 @@ public class CheckingService implements ICheckingService {
         if(checking.getBalance().getAmount().compareTo(BigDecimal.valueOf(0)) < 0) {
             throw new ResponseStatusException(HttpStatus.NOT_ACCEPTABLE, "The balance must be greater or equals than 0");
         } else {
+            checking.setCreationDate();
+            checking.setPenaltyFee();
+            checking.setMaxLimitTransactions(new Money(BigDecimal.valueOf(0), checking.getBalance().getCurrency()));
+
             if(ChronoUnit.YEARS.between(checking.getPrimaryOwner().getBirthDate(), LocalDateTime.now()) > 24) {
+                checking.setMinimumBalance(checking.getBalance().getCurrency());
+                checking.setMonthlyMaintenanceFee(checking.getBalance().getCurrency());
+
                 checkingRepository.save(checking);
             } else {
                 StudentChecking studentChecking = new StudentChecking(checking.getBalance(),

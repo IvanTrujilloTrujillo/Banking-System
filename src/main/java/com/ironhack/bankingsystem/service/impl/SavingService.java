@@ -38,6 +38,9 @@ public class SavingService implements ISavingService {
             } else {
                 saving.setInterestRate(BigDecimal.valueOf(0.0025));
             }
+            saving.setPenaltyFee();
+            saving.setCreationDate();
+            saving.setMaxLimitTransactions(new Money(BigDecimal.valueOf(0), saving.getBalance().getCurrency()));
             return savingRepository.save(saving);
         }
     }

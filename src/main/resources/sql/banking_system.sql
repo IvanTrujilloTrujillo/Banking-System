@@ -82,7 +82,7 @@ CREATE TABLE saving (
     minimum_balance_currency VARCHAR(255),
     minimum_balance_amount DECIMAL(19,2),
     status VARCHAR(30),
-    interest_rate DECIMAL(19,2),
+    interest_rate DECIMAL(19,4),
     PRIMARY KEY (id),
     FOREIGN KEY (id) REFERENCES account(id)
 ) ENGINE InnoDB;
@@ -91,7 +91,7 @@ CREATE TABLE credit_card (
 	id BIGINT NOT NULL AUTO_INCREMENT,
     credit_limit_currency VARCHAR(255),
     credit_limit_amount DECIMAL(19,2),
-    interest_rate DECIMAL(19,2),
+    interest_rate DECIMAL(19,4),
     PRIMARY KEY (id),
     FOREIGN KEY (id) REFERENCES account(id)
 ) ENGINE InnoDB;

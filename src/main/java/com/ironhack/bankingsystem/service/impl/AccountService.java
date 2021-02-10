@@ -92,7 +92,12 @@ public class AccountService implements IAccountService {
     }
 
     public void transferMoney(Transaction transaction, UserDetails userDetails) {
-        Account senderAccount = transaction.getSenderAccount();
+        Account senderAccount;
+        if (accountRepository.existsById(transaction.getSenderAccount().getId())) {
+            senderAccount = accountRepository.getOne(transaction.getSenderAccount().getId());
+        } else {
+            throw new ResponseStatusException(HttpStatus.NOT_ACCEPTABLE, "The sender account doesn't exist");
+        }
         Long receiverAccountId = transaction.getReceiverAccountId();
 
         if(senderAccount.getPrimaryOwner().getUsername().equals(userDetails.getUsername()) ||
@@ -106,7 +111,7 @@ public class AccountService implements IAccountService {
                             (accountRepository.findById(receiverAccountId).get().getSecondaryOwner() != null &&
                              accountRepository.findById(receiverAccountId).get().getSecondaryOwner().getName().equals(
                              transaction.getReceiverAccountHolderName()))) {
-                        senderAccount.getBalance().decreaseAmount(transaction.getAmount());   //TODO: Comprobar que funciona
+                        senderAccount.getBalance().decreaseAmount(transaction.getAmount());
                         accountRepository.findById(receiverAccountId).get().getBalance().increaseAmount(transaction.getAmount());
                         accountRepository.save(senderAccount);
                         transaction.setTransactionDate(LocalDateTime.now());

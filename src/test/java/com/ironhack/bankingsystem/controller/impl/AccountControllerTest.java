@@ -292,7 +292,7 @@ class AccountControllerTest {
                 new Money(BigDecimal.valueOf(100), checking.getBalance().getCurrency()));
         String body = objectMapper.writeValueAsString(transaction);
 
-        MvcResult result = mockMvc.perform(patch("/admin/transfer-money").content(body)
+        MvcResult result = mockMvc.perform(patch("/transfer-money").content(body)
                 .contentType(MediaType.APPLICATION_JSON).characterEncoding("UTF-8"))
                 .andExpect(status().isNoContent())
                 .andReturn();

@@ -105,4 +105,12 @@ public class Account {
     public void setCreationDate() {
         this.creationDate = LocalDateTime.now();
     }
+
+    public Money getMaxLimitTransactions() {
+        return maxLimitTransactions;
+    }
+
+    public void setMaxLimitTransactions(Money maxLimitTransactions) {
+        this.maxLimitTransactions = maxLimitTransactions;
+    }
 }

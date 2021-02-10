@@ -32,8 +32,9 @@ public class AccountHolderService implements IAccountHolderService {
             PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
             accountHolder.setPassword(passwordEncoder.encode(accountHolder.getPassword()));
 
+            accountHolderRepository.save(accountHolder);
             roleRepository.save(new Role("ACCOUNT_HOLDER", accountHolder));
-            return accountHolderRepository.save(accountHolder);
+            return accountHolder;
         }
     }
 }

@@ -38,6 +38,9 @@ public class CreditCardService implements ICreditCardService {
             } else {
                 creditCard.setInterestRate(BigDecimal.valueOf(0.2));
             }
+            creditCard.setPenaltyFee();
+            creditCard.setCreationDate();
+            creditCard.setMaxLimitTransactions(new Money(BigDecimal.valueOf(0), creditCard.getBalance().getCurrency()));
             return creditCardRepository.save(creditCard);
         }
     }
