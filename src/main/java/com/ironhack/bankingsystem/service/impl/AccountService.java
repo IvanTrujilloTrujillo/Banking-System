@@ -168,7 +168,13 @@ public class AccountService implements IAccountService {
             }
 
             if(status == Status.ACTIVE) {
-                if(ChronoUnit.SECONDS.between(transactionRepository.findLastTransactionBySenderAccount(senderAccount), LocalDateTime.now()) > 0) {
+                LocalDateTime lastTransaction;
+                if(transactionRepository.findLastTransactionBySenderAccount(senderAccount).isPresent()) {
+                    lastTransaction = transactionRepository.findLastTransactionBySenderAccount(senderAccount).get();
+                } else {
+                    lastTransaction = LocalDateTime.MIN;
+                }
+                if(ChronoUnit.SECONDS.between(lastTransaction, LocalDateTime.now()) > 0) {
                     if (transaction.getAmount().getAmount().compareTo(
                             senderAccount.getBalance().getAmount()) < 0) {
                         if (accountRepository.existsById(receiverAccountId)) {
