@@ -1,6 +1,8 @@
 package com.ironhack.bankingsystem.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.ironhack.bankingsystem.classes.Money;
+import org.hibernate.annotations.Proxy;
 
 import javax.persistence.*;
 import javax.validation.constraints.Min;

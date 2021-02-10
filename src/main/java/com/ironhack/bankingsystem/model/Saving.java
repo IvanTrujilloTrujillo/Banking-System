@@ -9,6 +9,7 @@ import javax.validation.constraints.DecimalMin;
 import javax.validation.constraints.Digits;
 import javax.validation.constraints.NotEmpty;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Entity
 @PrimaryKeyJoinColumn(name = "id")
@@ -27,6 +28,7 @@ public class Saving extends Account{
     @DecimalMax(value = "0.5", message = "The interest rate must be smaller or equal than 0.5")
     @DecimalMin(value = "0.0", message = "The interest rate must be greater or equal than 0.0")
     private BigDecimal interestRate = new BigDecimal("0.0025");
+    private LocalDateTime lastInterestAddedDate;
 
     public Saving() {
     }
@@ -40,6 +42,7 @@ public class Saving extends Account{
             setMinimumBalance(new Money(BigDecimal.valueOf(1000), minimumBalance.getCurrency()));
         }
         setInterestRate(interestRate);
+        setLastInterestAddedDate(LocalDateTime.now());
     }
 
     public Saving(Money balance, AccountHolder primaryOwner, AccountHolder secondaryOwner, String secretKey, Money minimumBalance) {
@@ -50,6 +53,7 @@ public class Saving extends Account{
         } catch (IllegalArgumentException e) {
             setMinimumBalance(new Money(BigDecimal.valueOf(1000), minimumBalance.getCurrency()));
         }
+        setLastInterestAddedDate(LocalDateTime.now());
     }
 
     public Saving(Money balance, AccountHolder primaryOwner, AccountHolder secondaryOwner, String secretKey, BigDecimal interestRate) {
@@ -57,12 +61,14 @@ public class Saving extends Account{
         setSecretKey(secretKey);
         setMinimumBalance(new Money(BigDecimal.valueOf(1000), balance.getCurrency()));
         setInterestRate(interestRate);
+        setLastInterestAddedDate(LocalDateTime.now());
     }
 
     public Saving(Money balance, AccountHolder primaryOwner, AccountHolder secondaryOwner, String secretKey) {
         super(balance, primaryOwner, secondaryOwner);
         setSecretKey(secretKey);
         setMinimumBalance(new Money(BigDecimal.valueOf(1000), balance.getCurrency()));
+        setLastInterestAddedDate(LocalDateTime.now());
     }
 
     public Saving(Money balance, AccountHolder primaryOwner, String secretKey, Money minimumBalance, BigDecimal interestRate) {
@@ -74,6 +80,7 @@ public class Saving extends Account{
             setMinimumBalance(new Money(BigDecimal.valueOf(1000), minimumBalance.getCurrency()));
         }
         setInterestRate(interestRate);
+        setLastInterestAddedDate(LocalDateTime.now());
     }
 
     public Saving(Money balance, AccountHolder primaryOwner, String secretKey, Money minimumBalance) {
@@ -84,6 +91,7 @@ public class Saving extends Account{
         } catch (IllegalArgumentException e) {
             setMinimumBalance(new Money(BigDecimal.valueOf(1000), minimumBalance.getCurrency()));
         }
+        setLastInterestAddedDate(LocalDateTime.now());
     }
 
     public Saving(Money balance, AccountHolder primaryOwner, String secretKey, BigDecimal interestRate) {
@@ -91,12 +99,14 @@ public class Saving extends Account{
         setSecretKey(secretKey);
         setMinimumBalance(new Money(BigDecimal.valueOf(1000), balance.getCurrency()));
         setInterestRate(interestRate);
+        setLastInterestAddedDate(LocalDateTime.now());
     }
 
     public Saving(Money balance, AccountHolder primaryOwner, String secretKey) {
         super(balance, primaryOwner);
         setSecretKey(secretKey);
         setMinimumBalance(new Money(BigDecimal.valueOf(1000), balance.getCurrency()));
+        setLastInterestAddedDate(LocalDateTime.now());
     }
 
     public String getSecretKey() {
@@ -134,5 +144,13 @@ public class Saving extends Account{
 
     public void setInterestRate(BigDecimal interestRate) {
         this.interestRate = interestRate;
+    }
+
+    public LocalDateTime getLastInterestAddedDate() {
+        return lastInterestAddedDate;
+    }
+
+    public void setLastInterestAddedDate(LocalDateTime lastInterestAddedDate) {
+        this.lastInterestAddedDate = lastInterestAddedDate;
     }
 }

@@ -2,6 +2,7 @@ package com.ironhack.bankingsystem.controller.impl;
 
 import com.ironhack.bankingsystem.classes.Money;
 import com.ironhack.bankingsystem.controller.dtos.BalanceDTO;
+import com.ironhack.bankingsystem.controller.dtos.MoneyDTO;
 import com.ironhack.bankingsystem.controller.interfaces.IAccountController;
 import com.ironhack.bankingsystem.model.Transaction;
 import com.ironhack.bankingsystem.repository.AccountRepository;
@@ -49,5 +50,23 @@ public class AccountController implements IAccountController {
         UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication()
                 .getPrincipal();
         accountService.transferMoney(transaction, userDetails);
+    }
+
+    @PatchMapping("/receive-money/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void receiveMoney(@PathVariable("id") Long id, @RequestParam("secret-key") String secretKey,
+                          @RequestBody @Valid MoneyDTO amount, @RequestHeader("Hashed-Key") String hashedKey) {
+        UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication()
+                .getPrincipal();
+        accountService.receiveMoney(id, secretKey, amount, hashedKey, userDetails);
+    }
+
+    @PatchMapping("/send-money/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void sendMoney(@PathVariable("id") Long id, @RequestParam("secret-key") String secretKey,
+                             @RequestBody @Valid MoneyDTO amount, @RequestHeader("Hashed-Key") String hashedKey) {
+        UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication()
+                .getPrincipal();
+        accountService.sendMoney(id, secretKey, amount, hashedKey, userDetails);
     }
 }

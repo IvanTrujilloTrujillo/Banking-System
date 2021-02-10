@@ -288,7 +288,9 @@ class AccountControllerTest {
                 "Ana Pérez", "Ana Pérez");
         Long id = accounts.get(0).getId();
 
-        Transaction transaction = new Transaction((Account) checking, "Ana Pérez", id,
+        Account account = accountRepository.findById(checking.getId()).get();
+
+        Transaction transaction = new Transaction(account, "Ana Pérez", id,
                 new Money(BigDecimal.valueOf(100), checking.getBalance().getCurrency()));
         String body = objectMapper.writeValueAsString(transaction);
 
@@ -302,5 +304,30 @@ class AccountControllerTest {
         assertEquals(BigDecimal.valueOf(3100).setScale(2),
                 savingRepository.findById(id).get().getBalance().getAmount());
         assertTrue(transactionRepository.existsById(transaction.getId()));
+    }
+
+    @Test
+    @WithMockUser(username = "manuelg", password = "1234", roles = {"ACCOUNT_HOLDER"})
+    public void transferMoney_ValidTransactionButAnotherUsername_Forbidden() throws Exception {
+    }
+
+    @Test
+    @WithMockUser(username = "manuelg", password = "1234", roles = {"ACCOUNT_HOLDER"})
+    public void transferMoney_ValidTransactionButNotEnoughBalance_NotAcceptable() throws Exception {
+    }
+
+    @Test
+    @WithMockUser(username = "manuelg", password = "1234", roles = {"ACCOUNT_HOLDER"})
+    public void transferMoney_ValidTransactionButNameDoesNotMatch_NotAcceptable() throws Exception {
+    }
+
+    @Test
+    @WithMockUser(username = "franciscor", password = "5555", roles = {"THIRD_PARTY"})
+    public void receiveMoney_ValidIdSecretKeyAmountAndHashedKey_BalanceSubtracted() {
+    }
+
+    @Test
+    @WithMockUser(username = "franciscor", password = "5555", roles = {"THIRD_PARTY"})
+    public void sendMoney_ValidIdSecretKeyAmountAndHashedKey_BalanceAdded() {
     }
 }

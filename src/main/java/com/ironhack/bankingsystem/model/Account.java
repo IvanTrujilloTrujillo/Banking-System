@@ -1,12 +1,15 @@
 package com.ironhack.bankingsystem.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.ironhack.bankingsystem.classes.Money;
+import org.hibernate.annotations.Proxy;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Currency;
+import java.util.List;
 
 @Entity
 @Inheritance(strategy = InheritanceType.JOINED)
@@ -39,6 +42,10 @@ public class Account {
             @AttributeOverride(name="amount",column=@Column(name="max_limit_transactions_amount")),
     })
     private Money maxLimitTransactions;
+
+    @OneToMany(mappedBy = "senderAccount", fetch = FetchType.EAGER, cascade = CascadeType.ALL)
+    @JsonIgnore
+    private List<Transaction> transactions;
 
     public Account() {
     }
@@ -112,5 +119,13 @@ public class Account {
 
     public void setMaxLimitTransactions(Money maxLimitTransactions) {
         this.maxLimitTransactions = maxLimitTransactions;
+    }
+
+    public List<Transaction> getTransactions() {
+        return transactions;
+    }
+
+    public void setTransactions(List<Transaction> transactions) {
+        this.transactions = transactions;
     }
 }

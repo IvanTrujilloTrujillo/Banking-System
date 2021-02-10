@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Service
 public class SavingService implements ISavingService {
@@ -40,6 +41,7 @@ public class SavingService implements ISavingService {
             }
             saving.setPenaltyFee();
             saving.setCreationDate();
+            saving.setLastInterestAddedDate(LocalDateTime.now());
             saving.setMaxLimitTransactions(new Money(BigDecimal.valueOf(0), saving.getBalance().getCurrency()));
             return savingRepository.save(saving);
         }

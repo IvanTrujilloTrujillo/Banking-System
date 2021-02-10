@@ -83,6 +83,7 @@ CREATE TABLE saving (
     minimum_balance_amount DECIMAL(19,2),
     status VARCHAR(30),
     interest_rate DECIMAL(19,4),
+    last_interest_added_date DATE,
     PRIMARY KEY (id),
     FOREIGN KEY (id) REFERENCES account(id)
 ) ENGINE InnoDB;
@@ -92,6 +93,7 @@ CREATE TABLE credit_card (
     credit_limit_currency VARCHAR(255),
     credit_limit_amount DECIMAL(19,2),
     interest_rate DECIMAL(19,4),
+    last_interest_added_date DATE,
     PRIMARY KEY (id),
     FOREIGN KEY (id) REFERENCES account(id)
 ) ENGINE InnoDB;

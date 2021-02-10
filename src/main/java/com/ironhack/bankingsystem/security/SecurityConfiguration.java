@@ -39,7 +39,9 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
         http.httpBasic();
         http.csrf().ignoringAntMatchers("/admin/*")
                 .ignoringAntMatchers("/account/*")
-                .ignoringAntMatchers("/transfer-money");
+                .ignoringAntMatchers("/transfer-money")
+                .ignoringAntMatchers("/send-money/*")
+                .ignoringAntMatchers("/receive-money/*");
         http.authorizeRequests()
                 .antMatchers(HttpMethod.GET, "/admin/account-balance/*").hasRole("ADMIN")
                 .antMatchers(HttpMethod.POST, "/admin/account-holder").hasRole("ADMIN")
@@ -50,6 +52,8 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
                 .antMatchers(HttpMethod.PATCH, "/admin/account-balance/*").hasRole("ADMIN")
                 .antMatchers(HttpMethod.GET, "/account/*").hasRole("ACCOUNT_HOLDER")
                 .antMatchers(HttpMethod.PATCH, "/transfer-money").hasRole("ACCOUNT_HOLDER")
+                .antMatchers(HttpMethod.PATCH, "/receive-money/*").hasRole("THIRD_PARTY")
+                .antMatchers(HttpMethod.PATCH, "/send-money/*").hasRole("THIRD_PARTY")
                 .anyRequest().permitAll();
     }
 }
