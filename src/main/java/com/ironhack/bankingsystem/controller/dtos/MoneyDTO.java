@@ -2,9 +2,11 @@ package com.ironhack.bankingsystem.controller.dtos;
 
 import javax.validation.constraints.DecimalMin;
 import javax.validation.constraints.Digits;
+import javax.validation.constraints.Size;
 import java.math.BigDecimal;
 
 public class MoneyDTO {
+    @Size(max = 3)
     private String currency = "USD";
     @Digits(integer = 19, fraction = 2, message = "The amount must have two decimals")
     @DecimalMin("0.00")

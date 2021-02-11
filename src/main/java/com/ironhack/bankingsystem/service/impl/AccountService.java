@@ -221,8 +221,8 @@ public class AccountService implements IAccountService {
                                 }
 
                                 //As we still don't have the limit on the account, we must compare if the transaction is legal
-                                if(sumTransactionsBeforeLastTwentyFourHours.compareTo(
-                                        sumLastTransactions.multiply(BigDecimal.valueOf(1.5))) < 0) {
+                                if(sumLastTransactions.compareTo(
+                                        sumTransactionsBeforeLastTwentyFourHours.multiply(BigDecimal.valueOf(1.5))) > 0) {
 
                                     if(checkingRepository.existsById(senderAccount.getId())){
                                         checkingRepository.findById(senderAccount.getId()).get().setStatus(Status.FROZEN);
@@ -261,15 +261,30 @@ public class AccountService implements IAccountService {
                                                 accountRepository.findById(receiverAccountId).get().getSecondaryOwner().getName().equals(
                                                         transaction.getReceiverAccountHolderName()))) {
 
-                                    senderAccount.getBalance().decreaseAmount(transaction.getAmount());
-                                    accountRepository.save(senderAccount);
+                                    Status status2 = Status.ACTIVE;
+                                    if(checkingRepository.existsById(receiverAccountId)){
+                                        status2 = checkingRepository.findById(receiverAccountId).get().getStatus();
+                                    } else if (studentCheckingRepository.existsById(receiverAccountId)){
+                                        status2 = studentCheckingRepository.findById(receiverAccountId).get().getStatus();
+                                    } else if (savingRepository.existsById(receiverAccountId)) {
+                                        status2 = savingRepository.findById(receiverAccountId).get().getStatus();
+                                    }
 
-                                    Account receiverAccount = accountRepository.findById(receiverAccountId).get();
-                                    receiverAccount.getBalance().increaseAmount(transaction.getAmount());
-                                    accountRepository.save(receiverAccount);
+                                    if(status2 == Status.ACTIVE) {
 
-                                    transaction.setTransactionDate(LocalDateTime.now());
-                                    transactionRepository.save(transaction);
+                                        senderAccount.getBalance().decreaseAmount(transaction.getAmount());
+                                        accountRepository.save(senderAccount);
+
+                                        Account receiverAccount = accountRepository.findById(receiverAccountId).get();
+                                        receiverAccount.getBalance().increaseAmount(transaction.getAmount());
+                                        accountRepository.save(receiverAccount);
+
+                                        transaction.setTransactionDate(LocalDateTime.now());
+                                        transactionRepository.save(transaction);
+
+                                    } else {
+                                        throw new ResponseStatusException(HttpStatus.NOT_ACCEPTABLE, "The receiver account is frozen");
+                                    }
 
                                 } else {
                                     throw new ResponseStatusException(HttpStatus.NOT_ACCEPTABLE, "The receiver name doesn't match " +

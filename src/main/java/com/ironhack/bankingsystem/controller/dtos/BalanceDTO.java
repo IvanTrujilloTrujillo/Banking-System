@@ -4,9 +4,11 @@ import com.ironhack.bankingsystem.classes.Money;
 
 import javax.validation.constraints.DecimalMin;
 import javax.validation.constraints.Digits;
+import javax.validation.constraints.Size;
 import java.math.BigDecimal;
 
 public class BalanceDTO {
+    @Size(max = 3)
     private String currency = "USD";
     @Digits(integer = 19, fraction = 2, message = "The amount must have two decimals")
     private BigDecimal amount;

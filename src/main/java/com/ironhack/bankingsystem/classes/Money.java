@@ -1,6 +1,7 @@
 package com.ironhack.bankingsystem.classes;
 
 import javax.persistence.Embeddable;
+import javax.validation.constraints.Digits;
 import java.math.RoundingMode;
 import java.math.BigDecimal;
 import java.util.Currency;
@@ -12,6 +13,7 @@ public class Money {
     private static final RoundingMode DEFAULT_ROUNDING = RoundingMode.HALF_EVEN;
 
     private Currency currency;
+    @Digits(integer = 19, fraction = 2, message = "The amount must have two decimals")
     private BigDecimal amount;
 
     /**
