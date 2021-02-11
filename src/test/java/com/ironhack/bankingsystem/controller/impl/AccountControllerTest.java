@@ -6,6 +6,8 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.ironhack.bankingsystem.classes.Address;
 import com.ironhack.bankingsystem.classes.Money;
 import com.ironhack.bankingsystem.controller.dtos.BalanceDTO;
+import com.ironhack.bankingsystem.controller.dtos.MoneyDTO;
+import com.ironhack.bankingsystem.enums.Status;
 import com.ironhack.bankingsystem.model.*;
 import com.ironhack.bankingsystem.repository.*;
 import com.ironhack.bankingsystem.security.CustomUserDetails;
@@ -73,6 +75,9 @@ class AccountControllerTest {
     @Autowired
     private TransactionRepository transactionRepository;
 
+    @Autowired
+    private ThirdPartyRepository thirdPartyRepository;
+
     private MockMvc mockMvc;
 
     private ObjectMapper objectMapper = new ObjectMapper();
@@ -83,11 +88,14 @@ class AccountControllerTest {
     private CreditCard creditCard;
 
     private User admin;
-    private CustomUserDetails customUserDetailsAdmin, customUserDetails, customUserDetails2, customUserDetails3, customUserDetails4;
+    private CustomUserDetails customUserDetailsAdmin, customUserDetails, customUserDetails2,
+            customUserDetails3, customUserDetails4, customUserDetailsThirdParty;
 
     private AccountHolder accountHolder, accountHolder2, accountHolder3, accountHolder4;
 
-    private Role adminRole, role, role2, role3, role4;
+    private ThirdParty thirdParty;
+
+    private Role adminRole, role, role2, role3, role4, thirdPartyRole;
 
     private Transaction transaction;
 
@@ -128,17 +136,23 @@ class AccountControllerTest {
 
         accountHolderRepository.saveAll(List.of(accountHolder, accountHolder2, accountHolder3, accountHolder4));
 
+        thirdParty = new ThirdParty("Pablo Méndez", "pablom", "2222", "TGHY8547");
+
+        thirdPartyRepository.save(thirdParty);
+
         role = new Role("ACCOUNT_HOLDER", accountHolder);
         role2 = new Role("ACCOUNT_HOLDER", accountHolder2);
         role3 = new Role("ACCOUNT_HOLDER", accountHolder3);
         role4 = new Role("ACCOUNT_HOLDER", accountHolder4);
+        thirdPartyRole = new Role("THIRD_PARTY", thirdParty);
 
-        roleRepository.saveAll(List.of(role, role2, role3, role4));
+        roleRepository.saveAll(List.of(role, role2, role3, role4, thirdPartyRole));
 
         accountHolder.setRoles(Set.of(role));
         accountHolder2.setRoles(Set.of(role2));
         accountHolder3.setRoles(Set.of(role3));
         accountHolder4.setRoles(Set.of(role4));
+        thirdParty.setRoles(Set.of(thirdPartyRole));
 
         accountHolderRepository.saveAll(List.of(accountHolder, accountHolder2, accountHolder3, accountHolder4));
 
@@ -146,6 +160,7 @@ class AccountControllerTest {
         customUserDetails2 = new CustomUserDetails((User) accountHolder2);
         customUserDetails3 = new CustomUserDetails((User) accountHolder3);
         customUserDetails4 = new CustomUserDetails((User) accountHolder4);
+        customUserDetailsThirdParty = new CustomUserDetails((User) thirdParty);
 
         checking = new Checking(new Money(BigDecimal.valueOf(500)), accountHolder, accountHolder3, "A1B2C3");
         //checking.setMaxLimitTransactions(new Money(BigDecimal.valueOf(0)));
@@ -168,6 +183,8 @@ class AccountControllerTest {
         accountRepository.deleteAll();
         accountHolderRepository.deleteAll();
         transactionRepository.deleteAll();
+        thirdPartyRepository.deleteAll();
+        userRepository.deleteAll();
     }
 
     @Test
@@ -356,27 +373,261 @@ class AccountControllerTest {
     }
 
     @Test
-    @WithMockUser(username = "manuelg", password = "1234", roles = {"ACCOUNT_HOLDER"})
-    public void transferMoney_ValidTransactionButAnotherUsername_Forbidden() throws Exception {
+    public void transferMoney_ValidTransactionButAnotherUser_Forbidden() throws Exception {
+        List<Account> accounts = accountRepository.findByPrimaryOwnerNameOrSecondaryOwnerName(
+                "Ana Pérez", "Ana Pérez");
+        Long id = accounts.get(0).getId();
+
+        Account account = accountRepository.findById(checking.getId()).get();
+
+        transaction = new Transaction(account, "Ana Pérez", id,
+                new Money(BigDecimal.valueOf(100), checking.getBalance().getCurrency()));
+        String body = objectMapper.writeValueAsString(transaction);
+
+        MvcResult result = mockMvc.perform(patch("/transfer-money").content(body)
+                .contentType(MediaType.APPLICATION_JSON).characterEncoding("UTF-8")
+                .with(user((UserDetails) customUserDetails2)).with(csrf()))
+                .andExpect(status().isForbidden())
+                .andReturn();
     }
 
     @Test
-    @WithMockUser(username = "manuelg", password = "1234", roles = {"ACCOUNT_HOLDER"})
     public void transferMoney_ValidTransactionButNotEnoughBalance_NotAcceptable() throws Exception {
+        List<Account> accounts = accountRepository.findByPrimaryOwnerNameOrSecondaryOwnerName(
+                "Ana Pérez", "Ana Pérez");
+        Long id = accounts.get(0).getId();
+
+        Account account = accountRepository.findById(checking.getId()).get();
+
+        transaction = new Transaction(account, "Ana Pérez", id,
+                new Money(BigDecimal.valueOf(10000), checking.getBalance().getCurrency()));
+        String body = objectMapper.writeValueAsString(transaction);
+
+        MvcResult result = mockMvc.perform(patch("/transfer-money").content(body)
+                .contentType(MediaType.APPLICATION_JSON).characterEncoding("UTF-8")
+                .with(user((UserDetails) customUserDetails)).with(csrf()))
+                .andExpect(status().isNotAcceptable())
+                .andReturn();
     }
 
     @Test
-    @WithMockUser(username = "manuelg", password = "1234", roles = {"ACCOUNT_HOLDER"})
     public void transferMoney_ValidTransactionButNameDoesNotMatch_NotAcceptable() throws Exception {
+        List<Account> accounts = accountRepository.findByPrimaryOwnerNameOrSecondaryOwnerName(
+                "Ana Pérez", "Ana Pérez");
+        Long id = accounts.get(0).getId();
+
+        Account account = accountRepository.findById(checking.getId()).get();
+
+        transaction = new Transaction(account, "María Pérez", id,
+                new Money(BigDecimal.valueOf(100), checking.getBalance().getCurrency()));
+        String body = objectMapper.writeValueAsString(transaction);
+
+        MvcResult result = mockMvc.perform(patch("/transfer-money").content(body)
+                .contentType(MediaType.APPLICATION_JSON).characterEncoding("UTF-8")
+                .with(user((UserDetails) customUserDetails)).with(csrf()))
+                .andExpect(status().isNotAcceptable())
+                .andReturn();
     }
 
     @Test
-    @WithMockUser(username = "franciscor", password = "5555", roles = {"THIRD_PARTY"})
-    public void receiveMoney_ValidIdSecretKeyAmountAndHashedKey_BalanceSubtracted() {
+    public void receiveMoney_ValidIdSecretKeyAmountAndHashedKey_BalanceSubtracted() throws Exception {
+        List<Account> accounts = accountRepository.findByPrimaryOwnerNameOrSecondaryOwnerName(
+                "Ana Pérez", "Ana Pérez");
+        Long id = accounts.get(0).getId();
+
+        MoneyDTO amount = new MoneyDTO("USD", BigDecimal.valueOf(50));
+        String body = objectMapper.writeValueAsString(amount);
+
+        MvcResult result = mockMvc.perform(patch("/receive-money/" + id)
+                .param("secret-key", "A1B2C3").content(body)
+                .header("Hashed-Key", "TGHY8547")
+                .contentType(MediaType.APPLICATION_JSON).characterEncoding("UTF-8")
+                .with(user((UserDetails) customUserDetailsThirdParty)).with(csrf()))
+                .andExpect(status().isNoContent())
+                .andReturn();
+
+        assertEquals(BigDecimal.valueOf(2950).setScale(2),
+                savingRepository.findById(saving2.getId()).get().getBalance().getAmount());
     }
 
     @Test
-    @WithMockUser(username = "franciscor", password = "5555", roles = {"THIRD_PARTY"})
-    public void sendMoney_ValidIdSecretKeyAmountAndHashedKey_BalanceAdded() {
+    public void receiveMoney_NotValidIdButValidSecretKeyAmountAndHashedKey_NotFound() throws Exception {
+        MoneyDTO amount = new MoneyDTO("USD", BigDecimal.valueOf(50));
+        String body = objectMapper.writeValueAsString(amount);
+
+        MvcResult result = mockMvc.perform(patch("/receive-money/10000")
+                .param("secret-key", "A1B2C3").content(body)
+                .header("Hashed-Key", "TGHY8547")
+                .contentType(MediaType.APPLICATION_JSON).characterEncoding("UTF-8")
+                .with(user((UserDetails) customUserDetailsThirdParty)).with(csrf()))
+                .andExpect(status().isNotFound())
+                .andReturn();
+    }
+
+    @Test
+    public void receiveMoney_ValidIdNotValidSecretKeyButValidAmountAndHashedKey_NotAcceptable() throws Exception {
+        List<Account> accounts = accountRepository.findByPrimaryOwnerNameOrSecondaryOwnerName(
+                "Ana Pérez", "Ana Pérez");
+        Long id = accounts.get(0).getId();
+
+        MoneyDTO amount = new MoneyDTO("USD", BigDecimal.valueOf(50));
+        String body = objectMapper.writeValueAsString(amount);
+
+        MvcResult result = mockMvc.perform(patch("/receive-money/" + id)
+                .param("secret-key", "TTTTT55555").content(body)
+                .header("Hashed-Key", "TGHY8547")
+                .contentType(MediaType.APPLICATION_JSON).characterEncoding("UTF-8")
+                .with(user((UserDetails) customUserDetailsThirdParty)).with(csrf()))
+                .andExpect(status().isNotAcceptable())
+                .andReturn();
+    }
+
+    @Test
+    public void receiveMoney_ValidIdValidSecretKeyNotValidAmountButValidHashedKey_NotAcceptable() throws Exception {
+        List<Account> accounts = accountRepository.findByPrimaryOwnerNameOrSecondaryOwnerName(
+                "Ana Pérez", "Ana Pérez");
+        Long id = accounts.get(0).getId();
+
+        MoneyDTO amount = new MoneyDTO("USD", BigDecimal.valueOf(500000));
+        String body = objectMapper.writeValueAsString(amount);
+
+        MvcResult result = mockMvc.perform(patch("/receive-money/" + id)
+                .param("secret-key", "A1B2C3").content(body)
+                .header("Hashed-Key", "TGHY8547")
+                .contentType(MediaType.APPLICATION_JSON).characterEncoding("UTF-8")
+                .with(user((UserDetails) customUserDetailsThirdParty)).with(csrf()))
+                .andExpect(status().isNotAcceptable())
+                .andReturn();
+    }
+
+    @Test
+    public void receiveMoney_ValidIdValidSecretKeyValidAmountAndNotValidHashedKey_NotFound() throws Exception {
+        List<Account> accounts = accountRepository.findByPrimaryOwnerNameOrSecondaryOwnerName(
+                "Ana Pérez", "Ana Pérez");
+        Long id = accounts.get(0).getId();
+
+        MoneyDTO amount = new MoneyDTO("USD", BigDecimal.valueOf(50));
+        String body = objectMapper.writeValueAsString(amount);
+
+        MvcResult result = mockMvc.perform(patch("/receive-money/" + id)
+                .param("secret-key", "A1B2C3").content(body)
+                .header("Hashed-Key", "AAAA5555")
+                .contentType(MediaType.APPLICATION_JSON).characterEncoding("UTF-8")
+                .with(user((UserDetails) customUserDetailsThirdParty)).with(csrf()))
+                .andExpect(status().isNotFound())
+                .andReturn();
+    }
+
+    @Test
+    public void receiveMoney_ValidIdSecretKeyAmountAndHashedKeyButFrozenAccount_NotAcceptable() throws Exception {
+        List<Account> accounts = accountRepository.findByPrimaryOwnerNameOrSecondaryOwnerName(
+                "Ana Pérez", "Ana Pérez");
+        Long id = accounts.get(0).getId();
+
+        saving2.setStatus(Status.FROZEN);
+        savingRepository.save(saving2);
+
+        MoneyDTO amount = new MoneyDTO("USD", BigDecimal.valueOf(50));
+        String body = objectMapper.writeValueAsString(amount);
+
+        MvcResult result = mockMvc.perform(patch("/receive-money/" + id)
+                .param("secret-key", "A1B2C3").content(body)
+                .header("Hashed-Key", "TGHY8547")
+                .contentType(MediaType.APPLICATION_JSON).characterEncoding("UTF-8")
+                .with(user((UserDetails) customUserDetailsThirdParty)).with(csrf()))
+                .andExpect(status().isNotAcceptable())
+                .andReturn();
+    }
+
+    @Test
+    public void sendMoney_ValidIdSecretKeyAmountAndHashedKey_BalanceSubtracted() throws Exception {
+        List<Account> accounts = accountRepository.findByPrimaryOwnerNameOrSecondaryOwnerName(
+                "Ana Pérez", "Ana Pérez");
+        Long id = accounts.get(0).getId();
+
+        MoneyDTO amount = new MoneyDTO("USD", BigDecimal.valueOf(50));
+        String body = objectMapper.writeValueAsString(amount);
+
+        MvcResult result = mockMvc.perform(patch("/send-money/" + id)
+                .param("secret-key", "A1B2C3").content(body)
+                .header("Hashed-Key", "TGHY8547")
+                .contentType(MediaType.APPLICATION_JSON).characterEncoding("UTF-8")
+                .with(user((UserDetails) customUserDetailsThirdParty)).with(csrf()))
+                .andExpect(status().isNoContent())
+                .andReturn();
+
+        assertEquals(BigDecimal.valueOf(3050).setScale(2),
+                savingRepository.findById(saving2.getId()).get().getBalance().getAmount());
+    }
+
+    @Test
+    public void sendMoney_NotValidIdButValidSecretKeyAmountAndHashedKey_NotFound() throws Exception {
+        MoneyDTO amount = new MoneyDTO("USD", BigDecimal.valueOf(50));
+        String body = objectMapper.writeValueAsString(amount);
+
+        MvcResult result = mockMvc.perform(patch("/send-money/10000")
+                .param("secret-key", "A1B2C3").content(body)
+                .header("Hashed-Key", "TGHY8547")
+                .contentType(MediaType.APPLICATION_JSON).characterEncoding("UTF-8")
+                .with(user((UserDetails) customUserDetailsThirdParty)).with(csrf()))
+                .andExpect(status().isNotFound())
+                .andReturn();
+    }
+
+    @Test
+    public void sendMoney_ValidIdNotValidSecretKeyButValidAmountAndHashedKey_NotAcceptable() throws Exception {
+        List<Account> accounts = accountRepository.findByPrimaryOwnerNameOrSecondaryOwnerName(
+                "Ana Pérez", "Ana Pérez");
+        Long id = accounts.get(0).getId();
+
+        MoneyDTO amount = new MoneyDTO("USD", BigDecimal.valueOf(50));
+        String body = objectMapper.writeValueAsString(amount);
+
+        MvcResult result = mockMvc.perform(patch("/send-money/" + id)
+                .param("secret-key", "TTTTT55555").content(body)
+                .header("Hashed-Key", "TGHY8547")
+                .contentType(MediaType.APPLICATION_JSON).characterEncoding("UTF-8")
+                .with(user((UserDetails) customUserDetailsThirdParty)).with(csrf()))
+                .andExpect(status().isNotAcceptable())
+                .andReturn();
+    }
+
+    @Test
+    public void sendMoney_ValidIdValidSecretKeyValidAmountAndNotValidHashedKey_NotFound() throws Exception {
+        List<Account> accounts = accountRepository.findByPrimaryOwnerNameOrSecondaryOwnerName(
+                "Ana Pérez", "Ana Pérez");
+        Long id = accounts.get(0).getId();
+
+        MoneyDTO amount = new MoneyDTO("USD", BigDecimal.valueOf(50));
+        String body = objectMapper.writeValueAsString(amount);
+
+        MvcResult result = mockMvc.perform(patch("/send-money/" + id)
+                .param("secret-key", "A1B2C3").content(body)
+                .header("Hashed-Key", "AAAA5555")
+                .contentType(MediaType.APPLICATION_JSON).characterEncoding("UTF-8")
+                .with(user((UserDetails) customUserDetailsThirdParty)).with(csrf()))
+                .andExpect(status().isNotFound())
+                .andReturn();
+    }
+
+    @Test
+    public void sendMoney_ValidIdSecretKeyAmountAndHashedKeyButFrozenAccount_NotAcceptable() throws Exception {
+        List<Account> accounts = accountRepository.findByPrimaryOwnerNameOrSecondaryOwnerName(
+                "Ana Pérez", "Ana Pérez");
+        Long id = accounts.get(0).getId();
+
+        saving2.setStatus(Status.FROZEN);
+        savingRepository.save(saving2);
+
+        MoneyDTO amount = new MoneyDTO("USD", BigDecimal.valueOf(50));
+        String body = objectMapper.writeValueAsString(amount);
+
+        MvcResult result = mockMvc.perform(patch("/send-money/" + id)
+                .param("secret-key", "A1B2C3").content(body)
+                .header("Hashed-Key", "TGHY8547")
+                .contentType(MediaType.APPLICATION_JSON).characterEncoding("UTF-8")
+                .with(user((UserDetails) customUserDetailsThirdParty)).with(csrf()))
+                .andExpect(status().isNotAcceptable())
+                .andReturn();
     }
 }
