@@ -1,6 +1,8 @@
 package com.ironhack.bankingsystem.controller.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.ironhack.bankingsystem.classes.Address;
 import com.ironhack.bankingsystem.classes.Money;
 import com.ironhack.bankingsystem.model.AccountHolder;
@@ -50,6 +52,9 @@ class CreditCardControllerTest {
     @BeforeEach
     public void setUp() {
         mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
+
+        objectMapper.registerModule(new JavaTimeModule());
+        objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
 
         accountHolder = new AccountHolder("Manuel Gómez", "manuelg", "1234",
                 LocalDateTime.of(1995, 2, 5, 0, 0),

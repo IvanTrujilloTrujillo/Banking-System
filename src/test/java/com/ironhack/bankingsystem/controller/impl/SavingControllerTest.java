@@ -1,6 +1,8 @@
 package com.ironhack.bankingsystem.controller.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.ironhack.bankingsystem.classes.Address;
 import com.ironhack.bankingsystem.classes.Money;
 import com.ironhack.bankingsystem.model.AccountHolder;
@@ -50,6 +52,9 @@ class SavingControllerTest {
     public void setUp() {
         mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
 
+        objectMapper.registerModule(new JavaTimeModule());
+        objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+
         accountHolder = new AccountHolder("Manuel Gómez", "manuelg", "1234",
                 LocalDateTime.of(1995, 2, 5, 0, 0),
                 new Address("Calle Benito Pérez, 10, 2A", "30254", "Madrid", "Spain")
@@ -95,7 +100,7 @@ class SavingControllerTest {
 
         MvcResult result2 = mockMvc.perform(post("/admin/saving").content(body)
                 .contentType(MediaType.APPLICATION_JSON).characterEncoding("UTF-8"))
-                .andExpect(status().isNotAcceptable())
+                .andExpect(status().isBadRequest())
                 .andReturn();
     }
 }

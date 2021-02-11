@@ -1,11 +1,14 @@
 package com.ironhack.bankingsystem.controller.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.ironhack.bankingsystem.classes.Address;
 import com.ironhack.bankingsystem.classes.Money;
 import com.ironhack.bankingsystem.controller.dtos.BalanceDTO;
 import com.ironhack.bankingsystem.model.*;
 import com.ironhack.bankingsystem.repository.*;
+import com.ironhack.bankingsystem.security.CustomUserDetails;
 import com.ironhack.bankingsystem.service.impl.AccountService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -26,16 +29,22 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.Currency;
 import java.util.List;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.*;
 
 @SpringBootTest
 class AccountControllerTest {
 
     @Autowired
     private WebApplicationContext webApplicationContext;
+
+    @Autowired
+    private UserRepository userRepository;
 
     @Autowired
     private AccountHolderRepository accountHolderRepository;
@@ -73,19 +82,32 @@ class AccountControllerTest {
     private Saving saving2;
     private CreditCard creditCard;
 
-    private AccountHolder accountHolder;
-    private AccountHolder accountHolder2;
-    private AccountHolder accountHolder3;
-    private AccountHolder accountHolder4;
+    private User admin;
+    private CustomUserDetails customUserDetailsAdmin, customUserDetails, customUserDetails2, customUserDetails3, customUserDetails4;
 
-    private Role role;
-    private Role role2;
-    private Role role3;
-    private Role role4;
+    private AccountHolder accountHolder, accountHolder2, accountHolder3, accountHolder4;
+
+    private Role adminRole, role, role2, role3, role4;
+
+    private Transaction transaction;
 
     @BeforeEach
     public void setUp() {
-        mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
+        mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).apply(springSecurity()).build();
+
+        objectMapper.registerModule(new JavaTimeModule());
+        objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+
+        admin = new User("Iván Trujillo", "ivantllo", "1111");
+        userRepository.save(admin);
+
+        adminRole = new Role("ADMIN", admin);
+        roleRepository.save(adminRole);
+
+        admin.setRoles(Set.of(adminRole));
+        userRepository.save(admin);
+
+        customUserDetailsAdmin = new CustomUserDetails(admin);
 
         accountHolder = new AccountHolder("Manuel Gómez", "manuelg", "1234",
                 LocalDateTime.of(1990, 2, 5, 0, 0),
@@ -111,13 +133,27 @@ class AccountControllerTest {
         role3 = new Role("ACCOUNT_HOLDER", accountHolder3);
         role4 = new Role("ACCOUNT_HOLDER", accountHolder4);
 
+        roleRepository.saveAll(List.of(role, role2, role3, role4));
+
+        accountHolder.setRoles(Set.of(role));
+        accountHolder2.setRoles(Set.of(role2));
+        accountHolder3.setRoles(Set.of(role3));
+        accountHolder4.setRoles(Set.of(role4));
+
+        accountHolderRepository.saveAll(List.of(accountHolder, accountHolder2, accountHolder3, accountHolder4));
+
+        customUserDetails = new CustomUserDetails((User) accountHolder);
+        customUserDetails2 = new CustomUserDetails((User) accountHolder2);
+        customUserDetails3 = new CustomUserDetails((User) accountHolder3);
+        customUserDetails4 = new CustomUserDetails((User) accountHolder4);
+
         checking = new Checking(new Money(BigDecimal.valueOf(500)), accountHolder, accountHolder3, "A1B2C3");
+        //checking.setMaxLimitTransactions(new Money(BigDecimal.valueOf(0)));
         saving = new Saving(new Money(BigDecimal.valueOf(1500)), accountHolder, accountHolder3, "A1B2C3");
         saving2 = new Saving(new Money(BigDecimal.valueOf(3000)), accountHolder2, accountHolder4, "A1B2C3");
         creditCard = new CreditCard(new Money(BigDecimal.valueOf(1000)), accountHolder, accountHolder3);
         saving = new Saving(new Money(BigDecimal.valueOf(1500)), accountHolder, accountHolder3, "A1B2C3");
 
-        roleRepository.saveAll(List.of(role, role2, role3, role4));
         checkingRepository.save(checking);
         savingRepository.saveAll(List.of(saving, saving2));
         creditCardRepository.save(creditCard);
@@ -131,6 +167,7 @@ class AccountControllerTest {
         checkingRepository.deleteAll();
         accountRepository.deleteAll();
         accountHolderRepository.deleteAll();
+        transactionRepository.deleteAll();
     }
 
     @Test
@@ -142,19 +179,22 @@ class AccountControllerTest {
         List<CreditCard> creditCards = creditCardRepository.findAll();
         Long id3 = creditCards.get(0).getId();
 
-        MvcResult result = mockMvc.perform(get("/admin/account-balance/" + id1).characterEncoding("UTF-8"))
+        MvcResult result = mockMvc.perform(get("/admin/account-balance/" + id1)
+                .characterEncoding("UTF-8").with(user((UserDetails) customUserDetailsAdmin)))
                 .andExpect(status().isOk())
                 .andReturn();
 
         assertTrue(result.getResponse().getContentAsString(StandardCharsets.UTF_8).contains("500"));
 
-        result = mockMvc.perform(get("/admin/account-balance/" + id2).characterEncoding("UTF-8"))
+        result = mockMvc.perform(get("/admin/account-balance/" + id2)
+                .characterEncoding("UTF-8").with(user((UserDetails) customUserDetailsAdmin)))
                 .andExpect(status().isOk())
                 .andReturn();
 
         assertTrue(result.getResponse().getContentAsString(StandardCharsets.UTF_8).contains("1500"));
 
-        result = mockMvc.perform(get("/admin/account-balance/" + id3).characterEncoding("UTF-8"))
+        result = mockMvc.perform(get("/admin/account-balance/" + id3)
+                .characterEncoding("UTF-8").with(user((UserDetails) customUserDetailsAdmin)))
                 .andExpect(status().isOk())
                 .andReturn();
 
@@ -163,8 +203,20 @@ class AccountControllerTest {
 
     @Test
     public void getAccountBalance_NotExistingId_Balance() throws Exception {
-        MvcResult result = mockMvc.perform(get("/admin/account-balance/100000").characterEncoding("UTF-8"))
+        MvcResult result = mockMvc.perform(get("/admin/account-balance/100000")
+                .characterEncoding("UTF-8").with(user((UserDetails) customUserDetailsAdmin)))
                 .andExpect(status().isNotFound())
+                .andReturn();
+    }
+
+    @Test
+    public void getAccountBalance_ExistingIdButNotAdmin_Forbidden() throws Exception {
+        List<Checking> checkings = checkingRepository.findAll();
+        Long id1 = checkings.get(0).getId();
+
+        MvcResult result = mockMvc.perform(get("/admin/account-balance/" + id1)
+                .characterEncoding("UTF-8").with(user((UserDetails) customUserDetails)))
+                .andExpect(status().isForbidden())
                 .andReturn();
     }
 
@@ -181,17 +233,20 @@ class AccountControllerTest {
         String body = objectMapper.writeValueAsString(balance);
 
         MvcResult result1 = mockMvc.perform(patch("/admin/account-balance/" + id1).content(body)
-                .contentType(MediaType.APPLICATION_JSON).characterEncoding("UTF-8"))
+                .contentType(MediaType.APPLICATION_JSON).characterEncoding("UTF-8")
+                .with(user((UserDetails) customUserDetailsAdmin)).with(csrf()))
                 .andExpect(status().isNoContent())
                 .andReturn();
 
         MvcResult result2 = mockMvc.perform(patch("/admin/account-balance/" + id2).content(body)
-                .contentType(MediaType.APPLICATION_JSON).characterEncoding("UTF-8"))
+                .contentType(MediaType.APPLICATION_JSON).characterEncoding("UTF-8")
+                .with(user((UserDetails) customUserDetailsAdmin)).with(csrf()))
                 .andExpect(status().isNoContent())
                 .andReturn();
 
         MvcResult result3 = mockMvc.perform(patch("/admin/account-balance/" + id3).content(body)
-                .contentType(MediaType.APPLICATION_JSON).characterEncoding("UTF-8"))
+                .contentType(MediaType.APPLICATION_JSON).characterEncoding("UTF-8")
+                .with(user((UserDetails) customUserDetailsAdmin)).with(csrf()))
                 .andExpect(status().isNoContent())
                 .andReturn();
 
@@ -206,7 +261,8 @@ class AccountControllerTest {
         String body = objectMapper.writeValueAsString(balance);
 
         MvcResult result = mockMvc.perform(patch("/admin/account-balance/1000000").content(body)
-                .contentType(MediaType.APPLICATION_JSON).characterEncoding("UTF-8"))
+                .contentType(MediaType.APPLICATION_JSON).characterEncoding("UTF-8")
+                .with(user((UserDetails) customUserDetailsAdmin)).with(csrf()))
                 .andExpect(status().isNotFound())
                 .andReturn();
     }
@@ -220,21 +276,20 @@ class AccountControllerTest {
         String body = objectMapper.writeValueAsString(balance);
 
         MvcResult result = mockMvc.perform(patch("/admin/account-balance/" + id1).content(body)
-                .contentType(MediaType.APPLICATION_JSON).characterEncoding("UTF-8"))
+                .contentType(MediaType.APPLICATION_JSON).characterEncoding("UTF-8")
+                .with(user((UserDetails) customUserDetailsAdmin)).with(csrf()))
                 .andExpect(status().isBadRequest())
                 .andReturn();
     }
 
     @Test
-    @WithMockUser(username = "manuelg", password = "1234", roles = {"ACCOUNT_HOLDER"})
     public void getBalanceForAccount_ExistingIdAndCorrectPrimaryUser_Balance() throws Exception {
-        UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication()
-                .getPrincipal();
         List<Account> accounts = accountRepository.findByPrimaryOwnerUsernameOrSecondaryOwnerUsername(
-                userDetails.getUsername(), userDetails.getUsername());
+                customUserDetails.getUsername(), customUserDetails.getUsername());
         Long id1 = accounts.get(0).getId();
 
-        MvcResult result = mockMvc.perform(get("/account/" + id1).characterEncoding("UTF-8"))
+        MvcResult result = mockMvc.perform(get("/account/" + id1).characterEncoding("UTF-8")
+                .with(user((UserDetails) customUserDetails)))
                 .andExpect(status().isOk())
                 .andReturn();
 
@@ -242,15 +297,13 @@ class AccountControllerTest {
     }
 
     @Test
-    @WithMockUser(username = "fernandog", password = "5555", roles = {"ACCOUNT_HOLDER"})
     public void getBalanceForAccount_ExistingIdAndCorrectSecondaryUser_Balance() throws Exception {
-        UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication()
-                .getPrincipal();
         List<Account> accounts = accountRepository.findByPrimaryOwnerUsernameOrSecondaryOwnerUsername(
-                userDetails.getUsername(), userDetails.getUsername());
+                customUserDetails3.getUsername(), customUserDetails3.getUsername());
         Long id1 = accounts.get(0).getId();
 
-        MvcResult result = mockMvc.perform(get("/account/" + id1).characterEncoding("UTF-8"))
+        MvcResult result = mockMvc.perform(get("/account/" + id1).characterEncoding("UTF-8")
+                .with(user((UserDetails) customUserDetails3)))
                 .andExpect(status().isOk())
                 .andReturn();
 
@@ -258,44 +311,40 @@ class AccountControllerTest {
     }
 
     @Test
-    @WithMockUser(username = "manuelg", password = "1234", roles = {"ACCOUNT_HOLDER"})
     public void getBalanceForAccount_NotExistingIdAndCorrectUser_NotFound() throws Exception {
-        MvcResult result = mockMvc.perform(get("/account/100000").characterEncoding("UTF-8"))
+        MvcResult result = mockMvc.perform(get("/account/100000").characterEncoding("UTF-8")
+                .with(user((UserDetails) customUserDetails)))
                 .andExpect(status().isNotFound())
                 .andReturn();
     }
 
     @Test
-    @WithMockUser(username = "anap", password = "9876", roles = {"ACCOUNT_HOLDER"})
     public void getBalanceForAccount_ExistingIdAndIncorrectUser_Forbidden() throws Exception {
-        UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication()
-                .getPrincipal();
         List<Account> accounts = accountRepository.findByPrimaryOwnerUsernameOrSecondaryOwnerUsername(
                 "manuelg", "manuelg");
         Long id1 = accounts.get(0).getId();
 
-        MvcResult result = mockMvc.perform(get("/account/" + id1).characterEncoding("UTF-8"))
+        MvcResult result = mockMvc.perform(get("/account/" + id1).characterEncoding("UTF-8")
+                .with(user((UserDetails) customUserDetails2)))
                 .andExpect(status().isForbidden())
                 .andReturn();
     }
 
     @Test
-    @WithMockUser(username = "manuelg", password = "1234", roles = {"ACCOUNT_HOLDER"})
     public void transferMoney_ValidTransaction_BalancesModifiedAndTransactionSaved() throws Exception {
-        UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication()
-                .getPrincipal();
         List<Account> accounts = accountRepository.findByPrimaryOwnerNameOrSecondaryOwnerName(
                 "Ana Pérez", "Ana Pérez");
         Long id = accounts.get(0).getId();
 
         Account account = accountRepository.findById(checking.getId()).get();
 
-        Transaction transaction = new Transaction(account, "Ana Pérez", id,
+        transaction = new Transaction(account, "Ana Pérez", id,
                 new Money(BigDecimal.valueOf(100), checking.getBalance().getCurrency()));
         String body = objectMapper.writeValueAsString(transaction);
 
         MvcResult result = mockMvc.perform(patch("/transfer-money").content(body)
-                .contentType(MediaType.APPLICATION_JSON).characterEncoding("UTF-8"))
+                .contentType(MediaType.APPLICATION_JSON).characterEncoding("UTF-8")
+                .with(user((UserDetails) customUserDetails)).with(csrf()))
                 .andExpect(status().isNoContent())
                 .andReturn();
 
@@ -303,7 +352,7 @@ class AccountControllerTest {
                 checkingRepository.findById(checking.getId()).get().getBalance().getAmount());
         assertEquals(BigDecimal.valueOf(3100).setScale(2),
                 savingRepository.findById(id).get().getBalance().getAmount());
-        assertTrue(transactionRepository.existsById(transaction.getId()));
+        assertEquals(BigDecimal.valueOf(100).setScale(2), transactionRepository.findAll().get(0).getAmount().getAmount());
     }
 
     @Test

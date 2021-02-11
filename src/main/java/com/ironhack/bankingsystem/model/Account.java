@@ -56,6 +56,7 @@ public class Account {
         setSecondaryOwner(secondaryOwner);
         setCreationDate();
         setPenaltyFee();
+        setMaxLimitTransactions(new Money(BigDecimal.valueOf(0), balance.getCurrency()));
     }
 
     public Account(Money balance, AccountHolder primaryOwner) {
@@ -63,6 +64,7 @@ public class Account {
         setPrimaryOwner(primaryOwner);
         setCreationDate();
         setPenaltyFee();
+        setMaxLimitTransactions(new Money(BigDecimal.valueOf(0), balance.getCurrency()));
     }
 
     public Long getId() {

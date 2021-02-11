@@ -1,6 +1,8 @@
 package com.ironhack.bankingsystem.controller.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.ironhack.bankingsystem.model.ThirdParty;
 import com.ironhack.bankingsystem.repository.ThirdPartyRepository;
 import org.junit.jupiter.api.AfterEach;
@@ -39,6 +41,9 @@ class ThirdPartyControllerTest {
     @BeforeEach
     public void setUp() {
         mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
+
+        objectMapper.registerModule(new JavaTimeModule());
+        objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
 
         thirdParty = new ThirdParty("Manuel Gómez", "manuelg", "1234", "A1B2C3");
 

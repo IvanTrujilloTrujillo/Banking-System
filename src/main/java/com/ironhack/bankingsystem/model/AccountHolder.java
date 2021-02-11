@@ -19,6 +19,7 @@ public class AccountHolder extends User{
             @AttributeOverride(name="city",column=@Column(name="primary_city")),
             @AttributeOverride(name="country",column=@Column(name="primary_country"))
     })
+    @NotNull
     private Address primaryAddress;
     @Embedded
     @AttributeOverrides({
