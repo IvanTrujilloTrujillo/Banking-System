@@ -16,9 +16,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Currency;
+import java.util.List;
 
 @Service
 public class AccountService implements IAccountService {
@@ -168,38 +170,98 @@ public class AccountService implements IAccountService {
             }
 
             if(status == Status.ACTIVE) {
+
                 LocalDateTime lastTransaction;
                 if(transactionRepository.findLastTransactionBySenderAccount(senderAccount).isPresent()) {
                     lastTransaction = transactionRepository.findLastTransactionBySenderAccount(senderAccount).get();
                 } else {
                     lastTransaction = LocalDateTime.MIN;
                 }
+
                 if(ChronoUnit.SECONDS.between(lastTransaction, LocalDateTime.now()) > 0) {
-                    if (transaction.getAmount().getAmount().compareTo(
-                            senderAccount.getBalance().getAmount()) < 0) {
-                        if (accountRepository.existsById(receiverAccountId)) {
-                            if (accountRepository.findById(receiverAccountId).get().getPrimaryOwner().getName().equals(
-                                    transaction.getReceiverAccountHolderName()) ||
-                                    (accountRepository.findById(receiverAccountId).get().getSecondaryOwner() != null &&
-                                            accountRepository.findById(receiverAccountId).get().getSecondaryOwner().getName().equals(
-                                                    transaction.getReceiverAccountHolderName()))) {
 
-                                senderAccount.getBalance().decreaseAmount(transaction.getAmount());
-                                accountRepository.save(senderAccount);
-                                accountRepository.findById(receiverAccountId).get().getBalance().increaseAmount(transaction.getAmount());
-                                transaction.setTransactionDate(LocalDateTime.now());
-                                transactionRepository.save(transaction);
+                    //Take the transactions made on the last 24 hours
+                    List<Transaction> lastTwentyFourHoursTransactions = transactionRepository.
+                            findByTransactionDateBetweenAndSenderAccount(
+                            LocalDateTime.now().minusHours(24), LocalDateTime.now(), senderAccount);
+                    BigDecimal sumLastTransactions = BigDecimal.valueOf(0);
 
+                    //If there are at least one, add the amount of each one
+                    if(lastTwentyFourHoursTransactions.size() > 0) {
+                        for (Transaction transactionFor : lastTwentyFourHoursTransactions) {
+                            sumLastTransactions = sumLastTransactions.add(transactionFor.getAmount().getAmount());
+                        }
+                    }
+                    //And add this one
+                    sumLastTransactions = sumLastTransactions.add(transaction.getAmount().getAmount());
+
+                    //If this sum is less than a 150% of the account's limit or the limit is 0, it can continue
+                    if(sumLastTransactions.compareTo(
+                            transaction.getSenderAccount().getMaxLimitTransactions().getAmount().multiply(
+                                    BigDecimal.valueOf(1.5))) < 1 ||
+                            transaction.getSenderAccount().getMaxLimitTransactions().getAmount().compareTo(
+                                    BigDecimal.valueOf(0)) == 0) {
+
+                        //If the limit is 0, it means there are very few transactions
+                        if(transaction.getSenderAccount().getMaxLimitTransactions().getAmount().compareTo(
+                                BigDecimal.valueOf(0)) == 0) {
+
+                            //Take the transactions made before last 24 hours
+                            List<Transaction> transactionsBeforeTwentyFourHour = transactionRepository.
+                                    findByTransactionDateBetweenAndSenderAccount(
+                                    LocalDateTime.MIN, LocalDateTime.now().minusHours(24), senderAccount);
+                            //If there are some transactions in before this period, we want to sum the amount of these
+                            //and set the limit with this sum
+                            if(transactionsBeforeTwentyFourHour.size() > 0) {
+
+                                BigDecimal sumTransactionsBeforeLastTwentyFourHours = BigDecimal.valueOf(0);
+                                for (Transaction transactionFor : transactionsBeforeTwentyFourHour) {
+                                    sumTransactionsBeforeLastTwentyFourHours = sumTransactionsBeforeLastTwentyFourHours
+                                            .add(transactionFor.getAmount().getAmount());
+                                }
+                                senderAccount.setMaxLimitTransactions(new Money(
+                                        sumTransactionsBeforeLastTwentyFourHours, senderAccount.getBalance().getCurrency()));
+                            }
+                        //Here we know the sum is less than a 150%, but, if is greater than the limit, we must set the limit
+                        } else if(sumLastTransactions.compareTo(
+                                transaction.getSenderAccount().getMaxLimitTransactions().getAmount()) > 0) {
+
+                            senderAccount.setMaxLimitTransactions(new Money(
+                                    sumLastTransactions, senderAccount.getBalance().getCurrency()));
+
+                        }
+
+                        if (transaction.getAmount().getAmount().compareTo(
+                                senderAccount.getBalance().getAmount()) < 0) {
+                            if (accountRepository.existsById(receiverAccountId)) {
+                                if (accountRepository.findById(receiverAccountId).get().getPrimaryOwner().getName().equals(
+                                        transaction.getReceiverAccountHolderName()) ||
+                                        (accountRepository.findById(receiverAccountId).get().getSecondaryOwner() != null &&
+                                                accountRepository.findById(receiverAccountId).get().getSecondaryOwner().getName().equals(
+                                                        transaction.getReceiverAccountHolderName()))) {
+
+                                    senderAccount.getBalance().decreaseAmount(transaction.getAmount());
+                                    accountRepository.save(senderAccount);
+                                    accountRepository.findById(receiverAccountId).get().getBalance().increaseAmount(transaction.getAmount());
+                                    transaction.setTransactionDate(LocalDateTime.now());
+                                    transactionRepository.save(transaction);
+
+                                } else {
+                                    throw new ResponseStatusException(HttpStatus.NOT_ACCEPTABLE, "The receiver name doesn't match " +
+                                            "with the owners of the Account Id");
+                                }
                             } else {
-                                throw new ResponseStatusException(HttpStatus.NOT_ACCEPTABLE, "The receiver name doesn't match " +
-                                        "with the owners of the Account Id");
+                                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "The Account Id of the receiver " +
+                                        "doesn't exist");
                             }
                         } else {
-                            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "The Account Id of the receiver " +
-                                    "doesn't exist");
+                            throw new ResponseStatusException(HttpStatus.NOT_ACCEPTABLE, "You don´t have enough balance");
                         }
+
+
                     } else {
-                        throw new ResponseStatusException(HttpStatus.NOT_ACCEPTABLE, "You don´t have enough balance");
+                        throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You have tried to make a transaction " +
+                                "above your limit in the last 24 hours, your account would be frozen. Contact with an admin");
                     }
                 } else {
                     if(checkingRepository.existsById(transaction.getSenderAccount().getId())){
@@ -212,6 +274,7 @@ public class AccountService implements IAccountService {
                         savingRepository.findById(transaction.getSenderAccount().getId()).get().setStatus(Status.FROZEN);
                         savingRepository.save(savingRepository.findById(transaction.getSenderAccount().getId()).get());
                     }
+
 
                     throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You have tried to make two transaction " +
                             "in 1 second, your account would be frozen. Contact with an admin");
