@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Service
 public class CreditCardService implements ICreditCardService {
@@ -40,6 +41,7 @@ public class CreditCardService implements ICreditCardService {
             }
             creditCard.setPenaltyFee();
             creditCard.setCreationDate();
+            creditCard.setLastInterestAddedDate(LocalDateTime.now());
             creditCard.setMaxLimitTransactions(new Money(BigDecimal.valueOf(0), creditCard.getBalance().getCurrency()));
             return creditCardRepository.save(creditCard);
         }

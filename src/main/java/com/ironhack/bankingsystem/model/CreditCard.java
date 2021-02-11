@@ -19,10 +19,10 @@ public class CreditCard extends Account{
             @AttributeOverride(name="amount",column=@Column(name="credit_limit_amount")),
     })
     private Money creditLimit;
-    @Digits(integer = 2, fraction = 2, message = "The interest rate must have two decimals")
-    @DecimalMax(value = "0.2", message = "The interest rate must be smaller or equal than 0.2")
-    @DecimalMin(value = "0.1", message = "The interest rate must be greater or equal than 0.1")
-    private BigDecimal interestRate = new BigDecimal("0.2");
+    @Digits(integer = 2, fraction = 4, message = "The interest rate must have four decimals")
+    @DecimalMax(value = "0.2000", message = "The interest rate must be smaller or equal than 0.2000")
+    @DecimalMin(value = "0.1000", message = "The interest rate must be greater or equal than 0.1000")
+    private BigDecimal interestRate = new BigDecimal("0.2000");
     private LocalDateTime lastInterestAddedDate;
 
     public CreditCard() {

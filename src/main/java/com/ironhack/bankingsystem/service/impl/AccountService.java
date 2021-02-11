@@ -161,12 +161,12 @@ public class AccountService implements IAccountService {
                  senderAccount.getSecondaryOwner().getUsername().equals(userDetails.getUsername()))) {
 
             Status status = Status.ACTIVE;
-            if(checkingRepository.existsById(transaction.getSenderAccount().getId())){
-                status = checkingRepository.findById(transaction.getSenderAccount().getId()).get().getStatus();
-            } else if (studentCheckingRepository.existsById(transaction.getSenderAccount().getId())){
-                status = studentCheckingRepository.findById(transaction.getSenderAccount().getId()).get().getStatus();
-            } else if (savingRepository.existsById(transaction.getSenderAccount().getId())) {
-                status = savingRepository.findById(transaction.getSenderAccount().getId()).get().getStatus();
+            if(checkingRepository.existsById(senderAccount.getId())){
+                status = checkingRepository.findById(senderAccount.getId()).get().getStatus();
+            } else if (studentCheckingRepository.existsById(senderAccount.getId())){
+                status = studentCheckingRepository.findById(senderAccount.getId()).get().getStatus();
+            } else if (savingRepository.existsById(senderAccount.getId())) {
+                status = savingRepository.findById(senderAccount.getId()).get().getStatus();
             }
 
             if(status == Status.ACTIVE) {
@@ -197,13 +197,13 @@ public class AccountService implements IAccountService {
 
                     //If this sum is less than a 150% of the account's limit or the limit is 0, it can continue
                     if(sumLastTransactions.compareTo(
-                            transaction.getSenderAccount().getMaxLimitTransactions().getAmount().multiply(
+                            senderAccount.getMaxLimitTransactions().getAmount().multiply(
                                     BigDecimal.valueOf(1.5))) < 1 ||
-                            transaction.getSenderAccount().getMaxLimitTransactions().getAmount().compareTo(
+                            senderAccount.getMaxLimitTransactions().getAmount().compareTo(
                                     BigDecimal.valueOf(0)) == 0) {
 
                         //If the limit is 0, it means there are very few transactions
-                        if(transaction.getSenderAccount().getMaxLimitTransactions().getAmount().compareTo(
+                        if(senderAccount.getMaxLimitTransactions().getAmount().compareTo(
                                 BigDecimal.valueOf(0)) == 0) {
 
                             //Take the transactions made before last 24 hours
@@ -219,12 +219,33 @@ public class AccountService implements IAccountService {
                                     sumTransactionsBeforeLastTwentyFourHours = sumTransactionsBeforeLastTwentyFourHours
                                             .add(transactionFor.getAmount().getAmount());
                                 }
+
+                                //As we still don't have the limit on the account, we must compare if the transaction is legal
+                                if(sumTransactionsBeforeLastTwentyFourHours.compareTo(
+                                        sumLastTransactions.multiply(BigDecimal.valueOf(1.5))) < 0) {
+
+                                    if(checkingRepository.existsById(senderAccount.getId())){
+                                        checkingRepository.findById(senderAccount.getId()).get().setStatus(Status.FROZEN);
+                                        checkingRepository.save(checkingRepository.findById(senderAccount.getId()).get());
+                                    } else if (studentCheckingRepository.existsById(senderAccount.getId())){
+                                        studentCheckingRepository.findById(senderAccount.getId()).get().setStatus(Status.FROZEN);
+                                        studentCheckingRepository.save(studentCheckingRepository.findById(senderAccount.getId()).get());
+                                    } else if (savingRepository.existsById(senderAccount.getId())) {
+                                        savingRepository.findById(senderAccount.getId()).get().setStatus(Status.FROZEN);
+                                        savingRepository.save(savingRepository.findById(senderAccount.getId()).get());
+                                    }
+
+                                    throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You have tried to make a " +
+                                            "transaction above your limit in the last 24 hours, your account would be " +
+                                            "frozen. Contact with an admin");
+                                }
+
                                 senderAccount.setMaxLimitTransactions(new Money(
                                         sumTransactionsBeforeLastTwentyFourHours, senderAccount.getBalance().getCurrency()));
                             }
                         //Here we know the sum is less than a 150%, but, if is greater than the limit, we must set the limit
                         } else if(sumLastTransactions.compareTo(
-                                transaction.getSenderAccount().getMaxLimitTransactions().getAmount()) > 0) {
+                                senderAccount.getMaxLimitTransactions().getAmount()) > 0) {
 
                             senderAccount.setMaxLimitTransactions(new Money(
                                     sumLastTransactions, senderAccount.getBalance().getCurrency()));
@@ -242,7 +263,11 @@ public class AccountService implements IAccountService {
 
                                     senderAccount.getBalance().decreaseAmount(transaction.getAmount());
                                     accountRepository.save(senderAccount);
-                                    accountRepository.findById(receiverAccountId).get().getBalance().increaseAmount(transaction.getAmount());
+
+                                    Account receiverAccount = accountRepository.findById(receiverAccountId).get();
+                                    receiverAccount.getBalance().increaseAmount(transaction.getAmount());
+                                    accountRepository.save(receiverAccount);
+
                                     transaction.setTransactionDate(LocalDateTime.now());
                                     transactionRepository.save(transaction);
 
@@ -260,19 +285,30 @@ public class AccountService implements IAccountService {
 
 
                     } else {
+                        if(checkingRepository.existsById(senderAccount.getId())){
+                            checkingRepository.findById(senderAccount.getId()).get().setStatus(Status.FROZEN);
+                            checkingRepository.save(checkingRepository.findById(senderAccount.getId()).get());
+                        } else if (studentCheckingRepository.existsById(senderAccount.getId())){
+                            studentCheckingRepository.findById(senderAccount.getId()).get().setStatus(Status.FROZEN);
+                            studentCheckingRepository.save(studentCheckingRepository.findById(senderAccount.getId()).get());
+                        } else if (savingRepository.existsById(senderAccount.getId())) {
+                            savingRepository.findById(senderAccount.getId()).get().setStatus(Status.FROZEN);
+                            savingRepository.save(savingRepository.findById(senderAccount.getId()).get());
+                        }
+
                         throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You have tried to make a transaction " +
                                 "above your limit in the last 24 hours, your account would be frozen. Contact with an admin");
                     }
                 } else {
-                    if(checkingRepository.existsById(transaction.getSenderAccount().getId())){
-                        checkingRepository.findById(transaction.getSenderAccount().getId()).get().setStatus(Status.FROZEN);
-                        checkingRepository.save(checkingRepository.findById(transaction.getSenderAccount().getId()).get());
-                    } else if (studentCheckingRepository.existsById(transaction.getSenderAccount().getId())){
-                        studentCheckingRepository.findById(transaction.getSenderAccount().getId()).get().setStatus(Status.FROZEN);
-                        studentCheckingRepository.save(studentCheckingRepository.findById(transaction.getSenderAccount().getId()).get());
-                    } else if (savingRepository.existsById(transaction.getSenderAccount().getId())) {
-                        savingRepository.findById(transaction.getSenderAccount().getId()).get().setStatus(Status.FROZEN);
-                        savingRepository.save(savingRepository.findById(transaction.getSenderAccount().getId()).get());
+                    if(checkingRepository.existsById(senderAccount.getId())){
+                        checkingRepository.findById(senderAccount.getId()).get().setStatus(Status.FROZEN);
+                        checkingRepository.save(checkingRepository.findById(senderAccount.getId()).get());
+                    } else if (studentCheckingRepository.existsById(senderAccount.getId())){
+                        studentCheckingRepository.findById(senderAccount.getId()).get().setStatus(Status.FROZEN);
+                        studentCheckingRepository.save(studentCheckingRepository.findById(senderAccount.getId()).get());
+                    } else if (savingRepository.existsById(senderAccount.getId())) {
+                        savingRepository.findById(senderAccount.getId()).get().setStatus(Status.FROZEN);
+                        savingRepository.save(savingRepository.findById(senderAccount.getId()).get());
                     }
 
 

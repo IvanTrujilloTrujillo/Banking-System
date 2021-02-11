@@ -12,7 +12,7 @@ CREATE TABLE user (
 
 CREATE TABLE account_holder (
 	id BIGINT NOT NULL AUTO_INCREMENT,
-    birth_date DATE,
+    birth_date DATETIME,
     mailing_city VARCHAR(255),
 	mailing_country VARCHAR(255),
 	mailing_postal_code VARCHAR(50),
@@ -48,7 +48,7 @@ CREATE TABLE account (
     secondary_owner_id BIGINT,
     penalty_fee_currency VARCHAR(255),
     penalty_fee_amount DECIMAL(19,2),
-    creation_date DATE,
+    creation_date DATETIME,
     max_limit_transactions_currency VARCHAR(255),
     max_limit_transactions_amount DECIMAL(19,2),
     PRIMARY KEY (id),
@@ -83,7 +83,7 @@ CREATE TABLE saving (
     minimum_balance_amount DECIMAL(19,2),
     status VARCHAR(30),
     interest_rate DECIMAL(19,4),
-    last_interest_added_date DATE,
+    last_interest_added_date DATETIME,
     PRIMARY KEY (id),
     FOREIGN KEY (id) REFERENCES account(id)
 ) ENGINE InnoDB;
@@ -93,7 +93,7 @@ CREATE TABLE credit_card (
     credit_limit_currency VARCHAR(255),
     credit_limit_amount DECIMAL(19,2),
     interest_rate DECIMAL(19,4),
-    last_interest_added_date DATE,
+    last_interest_added_date DATETIME,
     PRIMARY KEY (id),
     FOREIGN KEY (id) REFERENCES account(id)
 ) ENGINE InnoDB;
@@ -105,7 +105,7 @@ CREATE TABLE transaction (
     receiver_account_id BIGINT,
     currency VARCHAR(255),
     amount DECIMAL(19,2),
-    transaction_date DATE,
+    transaction_date DATETIME,
     PRIMARY KEY (id),
     FOREIGN KEY (sender_account_id) REFERENCES account(id)
 ) ENGINE InnoDB;

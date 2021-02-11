@@ -30,16 +30,16 @@ public class CheckingService implements ICheckingService {
         } else {
             checking.setCreationDate();
             checking.setPenaltyFee();
-            checking.setMaxLimitTransactions(new Money(BigDecimal.valueOf(0), checking.getBalance().getCurrency()));
 
             if(ChronoUnit.YEARS.between(checking.getPrimaryOwner().getBirthDate(), LocalDateTime.now()) > 24) {
                 checking.setMinimumBalance(checking.getBalance().getCurrency());
                 checking.setMonthlyMaintenanceFee(checking.getBalance().getCurrency());
-
+                checking.setMaxLimitTransactions(new Money(BigDecimal.valueOf(0), checking.getBalance().getCurrency()));
                 checkingRepository.save(checking);
             } else {
                 StudentChecking studentChecking = new StudentChecking(checking.getBalance(),
                         checking.getPrimaryOwner(), checking.getSecondaryOwner(), checking.getSecretKey());
+                studentChecking.setMaxLimitTransactions(new Money(BigDecimal.valueOf(0), checking.getBalance().getCurrency()));
                 studentCheckingRepository.save(studentChecking);
             }
 
