@@ -142,6 +142,10 @@ Read the funcionalities section to learn what you can do with this API.
   · Transactions made in 24 hours that total to more than 150% of the customers highest daily total transactions in any other 24 hour period
   
   · More than 2 transactions occurring on a single account within a 1 second period
+  
+## Extra functionalities
+
+- If an account holder has a student checking but is 24 years old or more, the student checking is deleted and a checking account is created with the some data when the account holder requests to see his/her balance.
 
 ## Diagrams
 
