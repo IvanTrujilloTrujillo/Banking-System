@@ -18,9 +18,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -628,6 +626,46 @@ class AccountControllerTest {
                 .contentType(MediaType.APPLICATION_JSON).characterEncoding("UTF-8")
                 .with(user((UserDetails) customUserDetailsThirdParty)).with(csrf()))
                 .andExpect(status().isNotAcceptable())
+                .andReturn();
+    }
+
+    @Test
+    public void unfreezeAccount_ValidIdOfAFrozenAccount_AccountUnfrozen() throws Exception {
+        List<Account> accounts = accountRepository.findByPrimaryOwnerNameOrSecondaryOwnerName(
+                "Ana Pérez", "Ana Pérez");
+        Long id = accounts.get(0).getId();
+        saving2.setStatus(Status.FROZEN);
+        savingRepository.save(saving2);
+
+        MvcResult result = mockMvc.perform(patch("/admin/unfreeze-account/" + id)
+                .characterEncoding("UTF-8")
+                .with(user((UserDetails) customUserDetailsAdmin)).with(csrf()))
+                .andExpect(status().isNoContent())
+                .andReturn();
+
+        assertEquals(Status.ACTIVE, savingRepository.findById(id).get().getStatus());
+    }
+
+    @Test
+    public void unfreezeAccount_NotValidId_NotFound() throws Exception {
+
+        MvcResult result = mockMvc.perform(patch("/admin/unfreeze-account/100000")
+                .characterEncoding("UTF-8")
+                .with(user((UserDetails) customUserDetailsAdmin)).with(csrf()))
+                .andExpect(status().isNotFound())
+                .andReturn();
+    }
+
+    @Test
+    public void unfreezeAccount_ValidIdButNotAFrozenAccount_Conflict() throws Exception {
+        List<Account> accounts = accountRepository.findByPrimaryOwnerNameOrSecondaryOwnerName(
+                "Ana Pérez", "Ana Pérez");
+        Long id = accounts.get(0).getId();
+
+        MvcResult result = mockMvc.perform(patch("/admin/unfreeze-account/" + id)
+                .characterEncoding("UTF-8")
+                .with(user((UserDetails) customUserDetailsAdmin)).with(csrf()))
+                .andExpect(status().isConflict())
                 .andReturn();
     }
 }

@@ -12,4 +12,5 @@ public interface IAccountController {
     void transferMoney(Transaction transaction);
     void receiveMoney(Long id, String secretKey, MoneyDTO amount, String hashedKey);
     void sendMoney(Long id, String secretKey, MoneyDTO amount, String hashedKey);
+    void unfreezeAccount(Long id);
 }

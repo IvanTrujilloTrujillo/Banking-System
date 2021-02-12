@@ -13,4 +13,5 @@ public interface IAccountService {
     void transferMoney(Transaction transaction, UserDetails userDetails);
     void receiveMoney(Long id, String secretKey, MoneyDTO amount, String hashedKey, UserDetails userDetails);
     void sendMoney(Long id, String secretKey, MoneyDTO amount, String hashedKey, UserDetails userDetails);
+    void unfreezeAccount(Long id);
 }

@@ -78,4 +78,11 @@ public class AccountController implements IAccountController {
                 .getPrincipal();
         accountService.sendMoney(id, secretKey, amount, hashedKey, userDetails);
     }
+
+    //Request for admins. If an account is frozen (checking, student checking or saving), the admin can unfreeze it
+    @PatchMapping("/admin/unfreeze-account/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void unfreezeAccount(@PathVariable("id") Long id) {
+        accountService.unfreezeAccount(id);
+    }
 }

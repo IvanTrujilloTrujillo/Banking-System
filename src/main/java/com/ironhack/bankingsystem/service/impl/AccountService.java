@@ -176,7 +176,8 @@ public class AccountService implements IAccountService {
                                 checking.setSecondaryOwner(checking.getSecondaryOwner());
                             }
 
-                            checkingRepository.save(checking);
+                            checking = checkingRepository.save(checking);
+                            id = checking.getId();
                         }
                     }
 
@@ -677,6 +678,47 @@ public class AccountService implements IAccountService {
             }
         } else {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "The Account Id of the receiver doesn't exist");
+        }
+    }
+
+    //Service to unfreeze an account by an admin
+    public void unfreezeAccount(Long id) {
+        //We have to ensure the account id exists
+        if(accountRepository.existsById(id)) {
+
+            Account account = accountRepository.findById(id).get();
+
+            //Save the status on a variable
+            Status status = Status.ACTIVE;
+            if(checkingRepository.existsById(id)){
+                status = checkingRepository.findById(id).get().getStatus();
+            } else if (studentCheckingRepository.existsById(id)){
+                status = studentCheckingRepository.findById(id).get().getStatus();
+            } else if (savingRepository.existsById(id)) {
+                status = savingRepository.findById(id).get().getStatus();
+            }
+
+            //Check if the status is frozen
+            if(status == Status.FROZEN) {
+
+                if(checkingRepository.existsById(id)){
+                    checkingRepository.findById(id).get().setStatus(Status.ACTIVE);
+                    checkingRepository.save(checkingRepository.findById(id).get());
+                } else if (studentCheckingRepository.existsById(id)){
+                    studentCheckingRepository.findById(id).get().setStatus(Status.ACTIVE);
+                    studentCheckingRepository.save(studentCheckingRepository.findById(id).get());
+                } else if (savingRepository.existsById(id)) {
+                    savingRepository.findById(id).get().setStatus(Status.ACTIVE);
+                    savingRepository.save(savingRepository.findById(id).get());
+                }
+
+            } else {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "The account isn't frozen");
+            }
+
+        //If the id doesn't match with any account, throws not found
+        } else {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "The Account Id doesn't exist");
         }
     }
 }
