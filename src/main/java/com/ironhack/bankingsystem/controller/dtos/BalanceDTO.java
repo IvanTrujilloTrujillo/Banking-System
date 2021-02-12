@@ -1,18 +1,18 @@
 package com.ironhack.bankingsystem.controller.dtos;
 
-import com.ironhack.bankingsystem.classes.Money;
-
-import javax.validation.constraints.DecimalMin;
 import javax.validation.constraints.Digits;
 import javax.validation.constraints.Size;
 import java.math.BigDecimal;
 
+//Class to validate balance on a patch request
 public class BalanceDTO {
+    //Properties
     @Size(max = 3)
     private String currency = "USD";
     @Digits(integer = 19, fraction = 2, message = "The amount must have two decimals")
     private BigDecimal amount;
 
+    //Constructors
     public BalanceDTO() {
     }
 
@@ -21,6 +21,7 @@ public class BalanceDTO {
         this.amount = amount;
     }
 
+    //Getters and setters
     public BalanceDTO(BigDecimal amount) {
         this.amount = amount;
     }

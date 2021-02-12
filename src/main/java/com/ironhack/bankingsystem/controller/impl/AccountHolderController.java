@@ -22,6 +22,7 @@ public class AccountHolderController implements IAccountHolderController {
     @Autowired
     private AccountHolderService accountHolderService;
 
+    //Request for admins. Create an account holder
     @PostMapping("/admin/account-holder")
     @ResponseStatus(HttpStatus.CREATED)
     public AccountHolder createAccountHolder(@RequestBody @Valid AccountHolder accountHolder) {

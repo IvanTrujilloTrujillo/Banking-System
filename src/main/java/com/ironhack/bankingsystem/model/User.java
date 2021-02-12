@@ -9,6 +9,7 @@ import java.util.Set;
 @Entity
 @Inheritance(strategy = InheritanceType.JOINED)
 public class User {
+    //Properties
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -23,6 +24,7 @@ public class User {
     @JsonIgnore
     private Set<Role> roles;
 
+    //Constructors
     public User() {
     }
 
@@ -32,6 +34,7 @@ public class User {
         setPassword(password);
     }
 
+    //Getters and setters
     public Long getId() {
         return id;
     }

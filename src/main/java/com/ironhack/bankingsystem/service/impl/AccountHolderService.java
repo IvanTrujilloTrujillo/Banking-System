@@ -25,13 +25,17 @@ public class AccountHolderService implements IAccountHolderService {
     @Autowired
     private RoleRepository roleRepository;
 
+    //Service to create an account holder by an admin
     public AccountHolder createAccountHolder(AccountHolder accountHolder) {
+        //If the username already exists, throws conflict
         if(userRepository.findByUsername(accountHolder.getUsername()).isPresent()) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "The username already exists");
         } else {
+            //Encrypt password
             PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
             accountHolder.setPassword(passwordEncoder.encode(accountHolder.getPassword()));
 
+            //Set role and save the account holder
             accountHolderRepository.save(accountHolder);
             roleRepository.save(new Role("ACCOUNT_HOLDER", accountHolder));
             return accountHolder;

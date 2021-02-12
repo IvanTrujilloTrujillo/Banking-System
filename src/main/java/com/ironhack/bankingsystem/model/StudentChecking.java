@@ -12,11 +12,13 @@ import javax.validation.constraints.NotEmpty;
 @Entity
 @PrimaryKeyJoinColumn(name = "id")
 public class StudentChecking extends Account {
+    //Properties
     @NotEmpty
     private String secretKey;
     @Enumerated(EnumType.STRING)
     private Status status = Status.ACTIVE;
 
+    //Constructors
     public StudentChecking() {
     }
 
@@ -30,6 +32,7 @@ public class StudentChecking extends Account {
         setSecretKey(secretKey);
     }
 
+    //Getters and setters
     public String getSecretKey() {
         return secretKey;
     }

@@ -12,6 +12,7 @@ import java.time.LocalDateTime;
 
 @Entity
 public class Transaction {
+    //Properties
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -28,6 +29,7 @@ public class Transaction {
     private Money amount;
     private LocalDateTime transactionDate;
 
+    //Constructors
     public Transaction() {
     }
 
@@ -39,6 +41,7 @@ public class Transaction {
         this.transactionDate = LocalDateTime.now();
     }
 
+    //Getters and setters
     public Long getId() {
         return id;
     }

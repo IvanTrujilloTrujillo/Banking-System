@@ -64,6 +64,7 @@ CREATE TABLE checking (
     minimum_balance_amount DECIMAL(19,2),
     monthly_maintenance_fee_currency VARCHAR(255),
     monthly_maintenance_fee_amount DECIMAL(19,2),
+    last_maintenance_fee_added_date DATETIME,
     PRIMARY KEY (id),
     FOREIGN KEY (id) REFERENCES account(id)
 ) ENGINE InnoDB;

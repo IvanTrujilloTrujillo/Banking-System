@@ -9,6 +9,7 @@ import java.util.Currency;
 @Embeddable
 public class Money {
 
+    //Properties
     private static final Currency USD = Currency.getInstance("USD");
     private static final RoundingMode DEFAULT_ROUNDING = RoundingMode.HALF_EVEN;
 
@@ -42,6 +43,7 @@ public class Money {
     public Money() {
     }
 
+    //Getters and setters
     public BigDecimal increaseAmount(Money money) {
         setAmount(this.amount.add(money.amount));
         return this.amount;

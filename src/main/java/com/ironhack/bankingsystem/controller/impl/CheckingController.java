@@ -22,6 +22,7 @@ public class CheckingController implements ICheckingController {
     @Autowired
     private CheckingService checkingService;
 
+    //Request for admins. Create a checking account or a student checking account
     @PostMapping("/admin/checking")
     @ResponseStatus(HttpStatus.CREATED)
     public void createChecking(@RequestBody @Valid Checking checking) {

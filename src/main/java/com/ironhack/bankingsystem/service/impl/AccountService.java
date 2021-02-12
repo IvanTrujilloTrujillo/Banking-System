@@ -5,7 +5,6 @@ import com.ironhack.bankingsystem.controller.dtos.BalanceDTO;
 import com.ironhack.bankingsystem.controller.dtos.MoneyDTO;
 import com.ironhack.bankingsystem.enums.Status;
 import com.ironhack.bankingsystem.model.Account;
-import com.ironhack.bankingsystem.model.Saving;
 import com.ironhack.bankingsystem.model.Transaction;
 import com.ironhack.bankingsystem.repository.*;
 import com.ironhack.bankingsystem.service.interfaces.IAccountService;
@@ -16,7 +15,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Currency;
@@ -46,33 +44,45 @@ public class AccountService implements IAccountService {
     @Autowired
     private ThirdPartyRepository thirdPartyRepository;
 
+    //Service to get an account balance by an admin
     public Money getAccountBalance(Long id) {
         if(accountRepository.existsById(id)) {
             return accountRepository.findById(id).get().getBalance();
+
+        //If the id doesn't match with any account, throws not found
         } else {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "The Account Id doesn't exist");
         }
     }
 
+    //Service to set an account balance by an admin
     public void setAccountBalance(Long id, BalanceDTO balance) {
+        //We have to ensure the account id exists
         if(accountRepository.existsById(id)) {
             Account account = accountRepository.findById(id).get();
             try {
                 Money newBalance = new Money(balance.getAmount(), Currency.getInstance(balance.getCurrency()));
                 account.setBalance(newBalance);
                 accountRepository.save(account);
+
+            //If the currency string isn't a valid format, throws bad request
             } catch (IllegalArgumentException | NullPointerException e) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "It isn't a supported ISO 4217 code");
             }
 
+        //If the id doesn't match with any account, throws not found
         } else {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "The Account Id doesn't exist");
         }
     }
 
+    //Service to get an account balance by an account holder
     public Money getBalanceForAccount(Long id, UserDetails userDetails) {
+        //Check if the id exists
         if(accountRepository.existsById(id)) {
 
+            //We need to check the status, but it's a property that only exists in checking, student checking and
+            //saving accounts, so we must check first if the id correspond with any of this accounts
             Status status = Status.ACTIVE;
             if(checkingRepository.existsById(id)){
                 status = checkingRepository.findById(id).get().getStatus();
@@ -82,11 +92,36 @@ public class AccountService implements IAccountService {
                 status = savingRepository.findById(id).get().getStatus();
             }
 
+            //Check if the username of the primary or secondary match with the username of the user details
             if(accountRepository.findById(id).get().getPrimaryOwner().getUsername().equals(userDetails.getUsername()) ||
                     (accountRepository.findById(id).get().getSecondaryOwner() != null &&
                      accountRepository.findById(id).get().getSecondaryOwner().getUsername().equals(userDetails.getUsername()))) {
+
+                //Check if the status is active
                 if(status == Status.ACTIVE) {
+
+                    //Now, we must check if the conditions to add or subtract the maintenance fee, minimum balance,
+                    //and interest rate are met.
+
+                    //First, the conditions to the checking account (if the account is this type)
                     if (checkingRepository.existsById(id)) {
+
+                        //If it has passed more than one month since the last maintenance fee subtracted, we must
+                        //subtract the fee
+                        if (ChronoUnit.MONTHS.between(checkingRepository.findById(id).get().getLastMaintenanceFeeAddedDate(), LocalDateTime.now()) > 1) {
+
+                            BigDecimal amount = checkingRepository.findById(id).get().getBalance().getAmount();
+                            amount = amount.subtract(checkingRepository.findById(id).get().getMonthlyMaintenanceFee().getAmount());
+                            checkingRepository.findById(id).get().setBalance(
+                                    new Money(amount, checkingRepository.findById(id).get().getBalance().getCurrency()));
+
+                            checkingRepository.findById(id).get().setLastMaintenanceFeeAddedDate(LocalDateTime.now());
+
+                            checkingRepository.save(checkingRepository.findById(id).get());
+
+                        }
+
+                        //If the balance is below the minimum, we must subtract the penalty fee
                         if (checkingRepository.findById(id).get().getBalance().getAmount().compareTo(
                                 checkingRepository.findById(id).get().getMinimumBalance().getAmount()) < 0) {
 
@@ -95,7 +130,11 @@ public class AccountService implements IAccountService {
                             checkingRepository.save(checkingRepository.findById(id).get());
 
                         }
+
+                    //If it isn't a checking account, it could be a saving account
                     } else if (savingRepository.existsById(id)) {
+
+                        //If it has passed more than one year since the last interest added, we must add the rate
                         if (ChronoUnit.YEARS.between(savingRepository.findById(id).get().getLastInterestAddedDate(), LocalDateTime.now()) > 1) {
 
                             BigDecimal amount = savingRepository.findById(id).get().getBalance().getAmount();
@@ -109,6 +148,7 @@ public class AccountService implements IAccountService {
 
                         }
 
+                        //If the balance is below the minimum, we must subtract the penalty fee
                         if (savingRepository.findById(id).get().getBalance().getAmount().compareTo(
                                 savingRepository.findById(id).get().getMinimumBalance().getAmount()) < 0) {
 
@@ -117,7 +157,12 @@ public class AccountService implements IAccountService {
                             savingRepository.save(savingRepository.findById(id).get());
 
                         }
+
+                    //If it isn't a checking or a saving account, it could be a credit card account
                     } else if (creditCardRepository.existsById(id)) {
+
+                        //If it has passed more than one month since the last interest added, we must add a
+                        //twelfth part of the rate
                         if (ChronoUnit.MONTHS.between(creditCardRepository.findById(id).get().getLastInterestAddedDate(), LocalDateTime.now()) > 1) {
 
                             BigDecimal amount = creditCardRepository.findById(id).get().getBalance().getAmount();
@@ -133,6 +178,7 @@ public class AccountService implements IAccountService {
                         }
                     }
 
+                    //Once all the checks are done, return the balance
                     return accountRepository.findById(id).get().getBalance();
                 } else {
                     throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Your account is frozen. Contact with an admin");
@@ -146,20 +192,28 @@ public class AccountService implements IAccountService {
         }
     }
 
+    //Service to transfer money by an account holder
     public void transferMoney(Transaction transaction, UserDetails userDetails) {
+        //For simplicity, we define an account for the sender's account
         Account senderAccount;
 
+        //Check if the if of the sender's account exists
         if (accountRepository.existsById(transaction.getSenderAccount().getId())) {
             senderAccount = accountRepository.findById(transaction.getSenderAccount().getId()).get();
         } else {
             throw new ResponseStatusException(HttpStatus.NOT_ACCEPTABLE, "The sender account doesn't exist");
         }
+
+        //For simplicity, we define a long to the receiver account id
         Long receiverAccountId = transaction.getReceiverAccountId();
 
+        //Check if the username of the primary or secondary in the sender's account match with the username of the user details
         if(senderAccount.getPrimaryOwner().getUsername().equals(userDetails.getUsername()) ||
                 (senderAccount.getSecondaryOwner() != null &&
                  senderAccount.getSecondaryOwner().getUsername().equals(userDetails.getUsername()))) {
 
+            //We need to check the status, but it's a property that only exists in checking, student checking and
+            //saving accounts, so we must check first if the id correspond with any of this accounts
             Status status = Status.ACTIVE;
             if(checkingRepository.existsById(senderAccount.getId())){
                 status = checkingRepository.findById(senderAccount.getId()).get().getStatus();
@@ -169,8 +223,11 @@ public class AccountService implements IAccountService {
                 status = savingRepository.findById(senderAccount.getId()).get().getStatus();
             }
 
+            //Check if the status is active
             if(status == Status.ACTIVE) {
 
+                //We must check if the last transaction have been made in less than one second, so, if there are
+                //any past transaction, we save on 'lastTransaction' the date of last transaction
                 LocalDateTime lastTransaction;
                 if(transactionRepository.findLastTransactionBySenderAccount(senderAccount).isPresent()) {
                     lastTransaction = transactionRepository.findLastTransactionBySenderAccount(senderAccount).get();
@@ -178,6 +235,7 @@ public class AccountService implements IAccountService {
                     lastTransaction = LocalDateTime.MIN;
                 }
 
+                //Check if is has passed more than one second since last transaction
                 if(ChronoUnit.SECONDS.between(lastTransaction, LocalDateTime.now()) > 0) {
 
                     //Take the transactions made on the last 24 hours
@@ -224,26 +282,36 @@ public class AccountService implements IAccountService {
                                 if(sumLastTransactions.compareTo(
                                         sumTransactionsBeforeLastTwentyFourHours.multiply(BigDecimal.valueOf(1.5))) > 0) {
 
+                                    //If it's illegal, we must frozen the account
                                     if(checkingRepository.existsById(senderAccount.getId())){
+
                                         checkingRepository.findById(senderAccount.getId()).get().setStatus(Status.FROZEN);
                                         checkingRepository.save(checkingRepository.findById(senderAccount.getId()).get());
+
                                     } else if (studentCheckingRepository.existsById(senderAccount.getId())){
+
                                         studentCheckingRepository.findById(senderAccount.getId()).get().setStatus(Status.FROZEN);
                                         studentCheckingRepository.save(studentCheckingRepository.findById(senderAccount.getId()).get());
+
                                     } else if (savingRepository.existsById(senderAccount.getId())) {
+
                                         savingRepository.findById(senderAccount.getId()).get().setStatus(Status.FROZEN);
                                         savingRepository.save(savingRepository.findById(senderAccount.getId()).get());
                                     }
 
+                                    //And throw a forbidden response
                                     throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You have tried to make a " +
                                             "transaction above your limit in the last 24 hours, your account would be " +
                                             "frozen. Contact with an admin");
                                 }
 
+                                //If it's legal, set the new limit
                                 senderAccount.setMaxLimitTransactions(new Money(
                                         sumTransactionsBeforeLastTwentyFourHours, senderAccount.getBalance().getCurrency()));
                             }
-                        //Here we know the sum is less than a 150%, but, if is greater than the limit, we must set the limit
+
+                        //Here we know the sum is less than a 150%, but, if is greater than the limit, we must set
+                        //the limit also
                         } else if(sumLastTransactions.compareTo(
                                 senderAccount.getMaxLimitTransactions().getAmount()) > 0) {
 
@@ -252,15 +320,21 @@ public class AccountService implements IAccountService {
 
                         }
 
+                        //Check if the sender's account have enough balance
                         if (transaction.getAmount().getAmount().compareTo(
                                 senderAccount.getBalance().getAmount()) < 0) {
+
+                            //Check if the id of the receiver's account exists
                             if (accountRepository.existsById(receiverAccountId)) {
+
+                                //Check if the name of the receiver match with the owners of the receiver's account
                                 if (accountRepository.findById(receiverAccountId).get().getPrimaryOwner().getName().equals(
                                         transaction.getReceiverAccountHolderName()) ||
                                         (accountRepository.findById(receiverAccountId).get().getSecondaryOwner() != null &&
                                                 accountRepository.findById(receiverAccountId).get().getSecondaryOwner().getName().equals(
                                                         transaction.getReceiverAccountHolderName()))) {
 
+                                    //Check if the status of the receiver's account is active
                                     Status status2 = Status.ACTIVE;
                                     if(checkingRepository.existsById(receiverAccountId)){
                                         status2 = checkingRepository.findById(receiverAccountId).get().getStatus();
@@ -338,11 +412,18 @@ public class AccountService implements IAccountService {
         }
     }
 
+    //Service to receive money by a third party
     public void receiveMoney(Long id, String secretKey, MoneyDTO amount, String hashedKey, UserDetails userDetails) {
+        //Check if the account's id exists
         if(accountRepository.existsById(id)) {
+
+            //Check if the hashed key exists
             if(thirdPartyRepository.findByHashedKey(hashedKey).isPresent()) {
+
+                //Check if the hashed key matches with the hashed key of the user logged
                 if(userDetails.getUsername().equals(thirdPartyRepository.findByHashedKey(hashedKey).get().getUsername())) {
 
+                    //Check if the status of the sender's account is active
                     Status status = Status.ACTIVE;
                     if(checkingRepository.existsById(id)){
                         status = checkingRepository.findById(id).get().getStatus();
@@ -353,8 +434,17 @@ public class AccountService implements IAccountService {
                     }
 
                     if(status == Status.ACTIVE) {
+
+                        //Check if there are enough balance
                         if (accountRepository.findById(id).get().getBalance().getAmount().compareTo(amount.getAmount()) > 0) {
+
+                            //Now, we must check the secret key, but it's a property of checking, student checking or
+                            //saving accounts, so we need to check if the sender's account if one of this
+
+                            //Checking account
                             if (checkingRepository.existsById(id)) {
+
+                                //Check if the secret key matches
                                 if (checkingRepository.findById(id).get().getSecretKey().equals(secretKey)) {
 
                                     Account account = accountRepository.findById(id).get();
@@ -365,7 +455,11 @@ public class AccountService implements IAccountService {
                                     throw new ResponseStatusException(HttpStatus.NOT_ACCEPTABLE, "The Secret Key doesn't match " +
                                             "with the Account");
                                 }
+
+                            //Student checking account
                             } else if (studentCheckingRepository.existsById(id)) {
+
+                                //Check if the secret key matches
                                 if (studentCheckingRepository.findById(id).get().getSecretKey().equals(secretKey)) {
 
                                     Account account = accountRepository.findById(id).get();
@@ -376,7 +470,11 @@ public class AccountService implements IAccountService {
                                     throw new ResponseStatusException(HttpStatus.NOT_ACCEPTABLE, "The Secret Key doesn't match " +
                                             "with the Account");
                                 }
+
+                            //Saving account
                             } else if (savingRepository.existsById(id)) {
+
+                                //Check if the secret key matches
                                 if (savingRepository.findById(id).get().getSecretKey().equals(secretKey)) {
 
                                     Account account = accountRepository.findById(id).get();
@@ -387,6 +485,8 @@ public class AccountService implements IAccountService {
                                     throw new ResponseStatusException(HttpStatus.NOT_ACCEPTABLE, "The Secret Key doesn't match " +
                                             "with the Account");
                                 }
+
+                            //If it's a credit card, it's not possible to complete the transfer
                             } else {
                                 throw new ResponseStatusException(HttpStatus.NOT_ACCEPTABLE, "You can't receive from a Credit Card");
                             }
@@ -407,11 +507,18 @@ public class AccountService implements IAccountService {
         }
     }
 
+    //Service to send money by a third party
     public void sendMoney(Long id, String secretKey, MoneyDTO amount, String hashedKey, UserDetails userDetails) {
+        //Check if the account's id exists
         if(accountRepository.existsById(id)) {
+
+            //Check if the hashed key exists
             if(thirdPartyRepository.findByHashedKey(hashedKey).isPresent()) {
+
+                //Check if the hashed key matches with the hashed key of the user logged
                 if(userDetails.getUsername().equals(thirdPartyRepository.findByHashedKey(hashedKey).get().getUsername())) {
 
+                    //Check if the status of the sender's account is active
                     Status status = Status.ACTIVE;
                     if(checkingRepository.existsById(id)){
                         status = checkingRepository.findById(id).get().getStatus();
@@ -422,7 +529,14 @@ public class AccountService implements IAccountService {
                     }
 
                     if(status == Status.ACTIVE) {
+
+                        //Now, we must check the secret key, but it's a property of checking, student checking or
+                        //saving accounts, so we need to check if the sender's account if one of this
+
+                        //Checking account
                         if (checkingRepository.existsById(id)) {
+
+                            //Check if the secret key matches
                             if (checkingRepository.findById(id).get().getSecretKey().equals(secretKey)) {
 
                                 Account account = accountRepository.findById(id).get();
@@ -433,7 +547,11 @@ public class AccountService implements IAccountService {
                                 throw new ResponseStatusException(HttpStatus.NOT_ACCEPTABLE, "The Secret Key doesn't match " +
                                         "with the Account");
                             }
+
+                        //Student checking account
                         } else if (studentCheckingRepository.existsById(id)) {
+
+                            //Check if the secret key matches
                             if (studentCheckingRepository.findById(id).get().getSecretKey().equals(secretKey)) {
 
                                 Account account = accountRepository.findById(id).get();
@@ -444,7 +562,11 @@ public class AccountService implements IAccountService {
                                 throw new ResponseStatusException(HttpStatus.NOT_ACCEPTABLE, "The Secret Key doesn't match " +
                                         "with the Account");
                             }
+
+                        //Saving account
                         } else if (savingRepository.existsById(id)) {
+
+                            //Check if the secret key matches
                             if (savingRepository.findById(id).get().getSecretKey().equals(secretKey)) {
 
                                 Account account = accountRepository.findById(id).get();
@@ -455,6 +577,8 @@ public class AccountService implements IAccountService {
                                 throw new ResponseStatusException(HttpStatus.NOT_ACCEPTABLE, "The Secret Key doesn't match " +
                                         "with the Account");
                             }
+
+                        //If it's a credit card, it's not possible to complete the transfer
                         } else {
                             throw new ResponseStatusException(HttpStatus.NOT_ACCEPTABLE, "You can't send to a Credit Card");
                         }

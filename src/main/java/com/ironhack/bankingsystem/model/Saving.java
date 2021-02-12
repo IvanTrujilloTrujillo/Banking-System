@@ -14,6 +14,7 @@ import java.time.LocalDateTime;
 @Entity
 @PrimaryKeyJoinColumn(name = "id")
 public class Saving extends Account{
+    //Properties
     @NotEmpty
     private String secretKey;
     @Embedded
@@ -30,85 +31,155 @@ public class Saving extends Account{
     private BigDecimal interestRate = new BigDecimal("0.0025");
     private LocalDateTime lastInterestAddedDate;
 
+    //Constructors
     public Saving() {
     }
 
+    /**
+     *  Class constructor specifying balance, primary owner, secondary owner, secret key, minimum balance and interest rate
+     **/
     public Saving(Money balance, AccountHolder primaryOwner, AccountHolder secondaryOwner, String secretKey, Money minimumBalance, BigDecimal interestRate) {
         super(balance, primaryOwner, secondaryOwner);
         setSecretKey(secretKey);
+        //If the minimum balance isn't a valid value, throws an exception and put the default value
         try {
             setMinimumBalance(minimumBalance);
         } catch (IllegalArgumentException e) {
             setMinimumBalance(new Money(BigDecimal.valueOf(1000), minimumBalance.getCurrency()));
         }
-        setInterestRate(interestRate);
+        //If the interest rate isn't a valid value, throws an exception and put the default value
+        try {
+            setInterestRate(interestRate);
+        } catch (IllegalArgumentException e) {
+            setInterestRate(BigDecimal.valueOf(0.0025));
+        }
+        //Set the last interest added date on current date
         setLastInterestAddedDate(LocalDateTime.now());
     }
 
+    /**
+     *  Class constructor specifying balance, primary owner, secondary owner, secret key and minimum balance
+     **/
     public Saving(Money balance, AccountHolder primaryOwner, AccountHolder secondaryOwner, String secretKey, Money minimumBalance) {
         super(balance, primaryOwner, secondaryOwner);
         setSecretKey(secretKey);
+        //If the minimum balance isn't a valid value, throws an exception and put the default value
         try {
             setMinimumBalance(minimumBalance);
         } catch (IllegalArgumentException e) {
             setMinimumBalance(new Money(BigDecimal.valueOf(1000), minimumBalance.getCurrency()));
         }
+        //Set interest rate on default value
+        setInterestRate(BigDecimal.valueOf(0.0025));
+        //Set the last interest added date on current date
         setLastInterestAddedDate(LocalDateTime.now());
     }
 
+    /**
+     *  Class constructor specifying balance, primary owner, secondary owner, secret key and interest rate
+     **/
     public Saving(Money balance, AccountHolder primaryOwner, AccountHolder secondaryOwner, String secretKey, BigDecimal interestRate) {
         super(balance, primaryOwner, secondaryOwner);
         setSecretKey(secretKey);
+        //Set minimum balance on default value
         setMinimumBalance(new Money(BigDecimal.valueOf(1000), balance.getCurrency()));
-        setInterestRate(interestRate);
+        //If the interest rate isn't a valid value, throws an exception and put the default value
+        try {
+            setInterestRate(interestRate);
+        } catch (IllegalArgumentException e) {
+            setInterestRate(BigDecimal.valueOf(0.0025));
+        }
+        //Set the last interest added date on current date
         setLastInterestAddedDate(LocalDateTime.now());
     }
 
+    /**
+     *  Class constructor specifying balance, primary owner, secondary owner and secret key
+     **/
     public Saving(Money balance, AccountHolder primaryOwner, AccountHolder secondaryOwner, String secretKey) {
         super(balance, primaryOwner, secondaryOwner);
         setSecretKey(secretKey);
+        //Set minimum balance on default value
         setMinimumBalance(new Money(BigDecimal.valueOf(1000), balance.getCurrency()));
+        //Set interest rate on default value
+        setInterestRate(BigDecimal.valueOf(0.0025));
+        //Set the last interest added date on current date
         setLastInterestAddedDate(LocalDateTime.now());
     }
 
+    /**
+     *  Class constructor specifying balance, primary owner, secret key, minimum balance and interest rate
+     **/
     public Saving(Money balance, AccountHolder primaryOwner, String secretKey, Money minimumBalance, BigDecimal interestRate) {
         super(balance, primaryOwner);
         setSecretKey(secretKey);
+        //If the minimum balance isn't a valid value, throws an exception and put the default value
         try {
             setMinimumBalance(minimumBalance);
         } catch (IllegalArgumentException e) {
             setMinimumBalance(new Money(BigDecimal.valueOf(1000), minimumBalance.getCurrency()));
         }
-        setInterestRate(interestRate);
+        //If the interest rate isn't a valid value, throws an exception and put the default value
+        try {
+            setInterestRate(interestRate);
+        } catch (IllegalArgumentException e) {
+            setInterestRate(BigDecimal.valueOf(0.0025));
+        }
+        //Set the last interest added date on current date
         setLastInterestAddedDate(LocalDateTime.now());
     }
 
+    /**
+     *  Class constructor specifying balance, primary owner, secret key and minimum balance
+     **/
     public Saving(Money balance, AccountHolder primaryOwner, String secretKey, Money minimumBalance) {
         super(balance, primaryOwner);
         setSecretKey(secretKey);
+        //If the minimum balance isn't a valid value, throws an exception and put the default value
         try {
             setMinimumBalance(minimumBalance);
         } catch (IllegalArgumentException e) {
             setMinimumBalance(new Money(BigDecimal.valueOf(1000), minimumBalance.getCurrency()));
         }
+        //Set interest rate on default value
+        setInterestRate(BigDecimal.valueOf(0.0025));
+        //Set the last interest added date on current date
         setLastInterestAddedDate(LocalDateTime.now());
     }
 
+    /**
+     *  Class constructor specifying balance, primary owner, secret key and interest rate
+     **/
     public Saving(Money balance, AccountHolder primaryOwner, String secretKey, BigDecimal interestRate) {
         super(balance, primaryOwner);
         setSecretKey(secretKey);
+        //Set minimum balance on default value
         setMinimumBalance(new Money(BigDecimal.valueOf(1000), balance.getCurrency()));
-        setInterestRate(interestRate);
+        //If the interest rate isn't a valid value, throws an exception and put the default value
+        try {
+            setInterestRate(interestRate);
+        } catch (IllegalArgumentException e) {
+            setInterestRate(BigDecimal.valueOf(0.0025));
+        }
+        //Set the last interest added date on current date
         setLastInterestAddedDate(LocalDateTime.now());
     }
 
+    /**
+     *  Class constructor specifying balance, primary owner and secret key
+     **/
     public Saving(Money balance, AccountHolder primaryOwner, String secretKey) {
         super(balance, primaryOwner);
         setSecretKey(secretKey);
+        //Set minimum balance on default value
         setMinimumBalance(new Money(BigDecimal.valueOf(1000), balance.getCurrency()));
+        //Set interest rate on default value
+        setInterestRate(BigDecimal.valueOf(0.0025));
+        //Set the last interest added date on current date
         setLastInterestAddedDate(LocalDateTime.now());
     }
 
+    //Getters and setters
     public String getSecretKey() {
         return secretKey;
     }
@@ -143,7 +214,11 @@ public class Saving extends Account{
     }
 
     public void setInterestRate(BigDecimal interestRate) {
-        this.interestRate = interestRate;
+        if(interestRate.compareTo(BigDecimal.valueOf(0.500)) > 0) {
+            throw new IllegalArgumentException("The interest rate must be smaller than 0.5");
+        } else {
+            this.interestRate = interestRate;
+        }
     }
 
     public LocalDateTime getLastInterestAddedDate() {

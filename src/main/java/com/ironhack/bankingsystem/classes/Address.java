@@ -1,15 +1,16 @@
 package com.ironhack.bankingsystem.classes;
 
 import javax.persistence.Embeddable;
-import javax.validation.constraints.NotEmpty;
 
 @Embeddable
 public class Address {
+    //Properties
     private String street;
     private String postalCode;
     private String city;
     private String country;
 
+    //Constructors
     public Address(String street, String postalCode, String city, String country) {
         setStreet(street);
         setPostalCode(postalCode);
@@ -20,6 +21,7 @@ public class Address {
     public Address() {
     }
 
+    //Getters and setters
     public String getStreet() {
         return street;
     }

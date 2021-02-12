@@ -6,6 +6,7 @@ import javax.validation.constraints.NotNull;
 
 @Entity
 public class Role {
+    //Properties
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -15,6 +16,7 @@ public class Role {
     @NotNull
     private User user;
 
+    //Constructors
     public Role() {
     }
 
@@ -23,6 +25,7 @@ public class Role {
         setUser(user);
     }
 
+    //Getters and setters
     public Long getId() {
         return id;
     }

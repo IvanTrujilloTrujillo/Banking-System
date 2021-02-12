@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
 @Entity
 @PrimaryKeyJoinColumn(name = "id")
 public class AccountHolder extends User{
+    //Properties
     @Past
     private LocalDateTime birthDate;
     @Embedded
@@ -30,9 +31,13 @@ public class AccountHolder extends User{
     })
     private Address mailingAddress;
 
+    //Constructors
     public AccountHolder() {
     }
 
+    /**
+     *  Class constructor specifying name, username, password, birth date, primary address and mailing address
+     **/
     public AccountHolder(String name, String username, String password, LocalDateTime birthDate, Address primaryAddress, Address mailingAddress) {
         super(name, username, password);
         setBirthDate(birthDate);
@@ -40,12 +45,16 @@ public class AccountHolder extends User{
         setMailingAddress(mailingAddress);
     }
 
+    /**
+     *  Class constructor specifying name, username, password, birth date and primary address
+     **/
     public AccountHolder(String name, String username, String password, LocalDateTime birthDate, Address primaryAddress) {
         super(name, username, password);
         setBirthDate(birthDate);
         setPrimaryAddress(primaryAddress);
     }
 
+    //Getters and setters
     public LocalDateTime getBirthDate() {
         return birthDate;
     }

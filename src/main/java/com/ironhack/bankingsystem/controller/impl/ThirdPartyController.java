@@ -22,6 +22,7 @@ public class ThirdPartyController implements IThirdPartyController {
     @Autowired
     private ThirdPartyService thirdPartyService;
 
+    //Request for admins. Create a third party
     @PostMapping("/admin/third-party")
     @ResponseStatus(HttpStatus.CREATED)
     public ThirdParty createThirdParty(@RequestBody @Valid ThirdParty thirdParty) {

@@ -22,6 +22,7 @@ public class SavingController implements ISavingController {
     @Autowired
     private SavingService savingService;
 
+    //Request for admins. Create a saving account
     @PostMapping("/admin/saving")
     @ResponseStatus(HttpStatus.CREATED)
     public Saving createSaving(@RequestBody @Valid Saving saving) {

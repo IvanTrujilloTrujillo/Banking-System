@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 @Entity
 @PrimaryKeyJoinColumn(name = "id")
 public class CreditCard extends Account{
-
+    //Properties
     @Embedded
     @AttributeOverrides({
             @AttributeOverride(name="currency",column=@Column(name="credit_limit_currency")),
@@ -25,77 +25,147 @@ public class CreditCard extends Account{
     private BigDecimal interestRate = new BigDecimal("0.2000");
     private LocalDateTime lastInterestAddedDate;
 
+    //Constructors
     public CreditCard() {
     }
 
+    /**
+     *  Class constructor specifying balance, primary owner, secondary owner, credit limit and interest rate
+     **/
     public CreditCard(Money balance, AccountHolder primaryOwner, AccountHolder secondaryOwner, Money creditLimit, BigDecimal interestRate) {
         super(balance, primaryOwner, secondaryOwner);
+        //If the credit limit isn't a valid value, throws an exception and put the default value
         try {
             setCreditLimit(creditLimit);
         } catch (IllegalArgumentException e) {
             setCreditLimit(new Money(BigDecimal.valueOf(100), creditLimit.getCurrency()));
         }
-        setInterestRate(interestRate);
+        //If the interest rate isn't a valid value, throws an exception and put the default value
+        try {
+            setInterestRate(interestRate);
+        } catch (IllegalArgumentException e) {
+            setInterestRate(BigDecimal.valueOf(0.2));
+        }
+        //Set the last interest added date on current date
         setLastInterestAddedDate(LocalDateTime.now());
     }
 
+    /**
+     *  Class constructor specifying balance, primary owner, secondary owner and credit limit
+     **/
     public CreditCard(Money balance, AccountHolder primaryOwner, AccountHolder secondaryOwner, Money creditLimit) {
         super(balance, primaryOwner, secondaryOwner);
+        //If the credit limit isn't a valid value, throws an exception and put the default value
         try {
             setCreditLimit(creditLimit);
         } catch (IllegalArgumentException e) {
             setCreditLimit(new Money(BigDecimal.valueOf(100), creditLimit.getCurrency()));
         }
+        //Set interest rate on default value
+        setInterestRate(BigDecimal.valueOf(0.2));
+        //Set the last interest added date on current date
         setLastInterestAddedDate(LocalDateTime.now());
     }
 
+    /**
+     *  Class constructor specifying balance, primary owner, secondary owner and interest rate
+     **/
     public CreditCard(Money balance, AccountHolder primaryOwner, AccountHolder secondaryOwner, BigDecimal interestRate) {
         super(balance, primaryOwner, secondaryOwner);
+        //Set credit limit on default value
         setCreditLimit(new Money(BigDecimal.valueOf(100), balance.getCurrency()));
-        setInterestRate(interestRate);
+        //If the interest rate isn't a valid value, throws an exception and put the default value
+        try {
+            setInterestRate(interestRate);
+        } catch (IllegalArgumentException e) {
+            setInterestRate(BigDecimal.valueOf(0.2));
+        }
+        //Set the last interest added date on current date
         setLastInterestAddedDate(LocalDateTime.now());
     }
 
+    /**
+     *  Class constructor specifying balance, primary owner and secondary owner
+     **/
     public CreditCard(Money balance, AccountHolder primaryOwner, AccountHolder secondaryOwner) {
         super(balance, primaryOwner, secondaryOwner);
+        //Set credit limit on default value
         setCreditLimit(new Money(BigDecimal.valueOf(100), balance.getCurrency()));
+        //Set interest rate on default value
+        setInterestRate(BigDecimal.valueOf(0.2));
+        //Set the last interest added date on current date
         setLastInterestAddedDate(LocalDateTime.now());
     }
 
+    /**
+     *  Class constructor specifying balance, primary owner, credit limit and interest rate
+     **/
     public CreditCard(Money balance, AccountHolder primaryOwner, Money creditLimit, BigDecimal interestRate) {
         super(balance, primaryOwner);
+        //If the credit limit isn't a valid value, throws an exception and put the default value
         try {
             setCreditLimit(creditLimit);
         } catch (IllegalArgumentException e) {
             setCreditLimit(new Money(BigDecimal.valueOf(100), creditLimit.getCurrency()));
         }
-        setInterestRate(interestRate);
+        //If the interest rate isn't a valid value, throws an exception and put the default value
+        try {
+            setInterestRate(interestRate);
+        } catch (IllegalArgumentException e) {
+            setInterestRate(BigDecimal.valueOf(0.2));
+        }
+        //Set the last interest added date on current date
         setLastInterestAddedDate(LocalDateTime.now());
     }
 
+    /**
+     *  Class constructor specifying balance, primary owner and credit limit
+     **/
     public CreditCard(Money balance, AccountHolder primaryOwner, Money creditLimit) {
         super(balance, primaryOwner);
+        //If the credit limit isn't a valid value, throws an exception and put the default value
         try {
             setCreditLimit(creditLimit);
         } catch (IllegalArgumentException e) {
             setCreditLimit(new Money(BigDecimal.valueOf(100), creditLimit.getCurrency()));
         }
+        //Set interest rate on default value
+        setInterestRate(BigDecimal.valueOf(0.2));
+        //Set the last interest added date on current date
         setLastInterestAddedDate(LocalDateTime.now());
     }
 
+    /**
+     *  Class constructor specifying balance, primary owner and interest rate
+     **/
     public CreditCard(Money balance, AccountHolder primaryOwner, BigDecimal interestRate) {
         super(balance, primaryOwner);
+        //Set credit limit on default value
         setCreditLimit(new Money(BigDecimal.valueOf(100), balance.getCurrency()));
-        setInterestRate(interestRate);
+        //If the interest rate isn't a valid value, throws an exception and put the default value
+        try {
+            setInterestRate(interestRate);
+        } catch (IllegalArgumentException e) {
+            setInterestRate(BigDecimal.valueOf(0.2));
+        }
+        //Set the last interest added date on current date
         setLastInterestAddedDate(LocalDateTime.now());
     }
 
+    /**
+     *  Class constructor specifying balance and primary owner
+     **/
     public CreditCard(Money balance, AccountHolder primaryOwner) {
         super(balance, primaryOwner);
+        //Set credit limit on default value
         setCreditLimit(new Money(BigDecimal.valueOf(100), balance.getCurrency()));
+        //Set interest rate on default value
+        setInterestRate(BigDecimal.valueOf(0.2));
+        //Set the last interest added date on current date
         setLastInterestAddedDate(LocalDateTime.now());
     }
 
+    //Getters and setters
     public Money getCreditLimit() {
         return creditLimit;
     }
@@ -114,7 +184,13 @@ public class CreditCard extends Account{
     }
 
     public void setInterestRate(BigDecimal interestRate) {
-        this.interestRate = interestRate;
+        if(interestRate.compareTo(BigDecimal.valueOf(0.1)) < 0 ||
+                interestRate.compareTo(BigDecimal.valueOf(0.2)) > 0) {
+            throw new IllegalArgumentException("The interest rate must be between 0.1 and 0.2");
+        } else {
+            this.interestRate = interestRate;
+        }
+
     }
 
     public LocalDateTime getLastInterestAddedDate() {

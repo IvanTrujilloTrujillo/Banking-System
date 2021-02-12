@@ -22,6 +22,7 @@ public class CreditCardController implements ICreditCardController {
     @Autowired
     private CreditCardService creditCardService;
 
+    //Request for admins. Create a credit card account
     @PostMapping("/admin/credit-card")
     @ResponseStatus(HttpStatus.CREATED)
     public CreditCard createCreditCard(@RequestBody @Valid CreditCard creditCard) {

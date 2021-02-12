@@ -24,18 +24,21 @@ public class AccountController implements IAccountController {
     @Autowired
     private AccountService accountService;
 
+    //Request for admins. Return the balance of an account given the id
     @GetMapping("/admin/account-balance/{id}")
     @ResponseStatus(HttpStatus.OK)
     public Money getAccountBalance(@PathVariable("id") Long id) {
         return accountService.getAccountBalance(id);
     }
 
+    //Request for admins. Change the balance of an account given the id
     @PatchMapping("/admin/account-balance/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void setAccountBalance(@PathVariable("id") Long id, @RequestBody @Valid BalanceDTO balance) {
         accountService.setAccountBalance(id, balance);
     }
 
+    //Request for account holders. Return the balance of an account given the id
     @GetMapping("/account/{id}")
     @ResponseStatus(HttpStatus.OK)
     public Money getBalanceForAccount(@PathVariable("id") Long id) {
@@ -44,6 +47,8 @@ public class AccountController implements IAccountController {
         return accountService.getBalanceForAccount(id, userDetails);
     }
 
+    //Request for account holders. Transfer money from one of the sender's account to another account
+    //The information needed is inside of the object Transaction
     @PatchMapping("/transfer-money")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void transferMoney(@RequestBody @Valid Transaction transaction) {
@@ -52,6 +57,8 @@ public class AccountController implements IAccountController {
         accountService.transferMoney(transaction, userDetails);
     }
 
+    //Request for third parties. Receive money from an account given the id, the name of one of the owners,
+    //the secret key of the account and the hashed key of the third party
     @PatchMapping("/receive-money/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void receiveMoney(@PathVariable("id") Long id, @RequestParam("secret-key") String secretKey,
@@ -61,6 +68,8 @@ public class AccountController implements IAccountController {
         accountService.receiveMoney(id, secretKey, amount, hashedKey, userDetails);
     }
 
+    //Request for third parties. Send money to an account given the id, the name of one of the owners,
+    //the secret key of the account and the hashed key of the third party
     @PatchMapping("/send-money/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void sendMoney(@PathVariable("id") Long id, @RequestParam("secret-key") String secretKey,

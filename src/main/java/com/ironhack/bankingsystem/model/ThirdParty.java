@@ -7,9 +7,11 @@ import javax.validation.constraints.NotEmpty;
 @Entity
 @PrimaryKeyJoinColumn(name = "id")
 public class ThirdParty extends User{
+    //Properties
     @NotEmpty
     private String hashedKey;
 
+    //Constructors
     public ThirdParty() {
     }
 
@@ -18,6 +20,7 @@ public class ThirdParty extends User{
         setHashedKey(hashedKey);
     }
 
+    //Getters and setters
     public String getHashedKey() {
         return hashedKey;
     }

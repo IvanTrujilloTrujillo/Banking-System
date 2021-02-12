@@ -14,6 +14,7 @@ import java.util.List;
 @Entity
 @Inheritance(strategy = InheritanceType.JOINED)
 public class Account {
+    //Properties
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -47,26 +48,40 @@ public class Account {
     @JsonIgnore
     private List<Transaction> transactions;
 
+    //Constructors
     public Account() {
     }
 
+    /**
+    *  Class constructor specifying balance, primary owner and secondary owner
+    **/
     public Account(Money balance, AccountHolder primaryOwner, AccountHolder secondaryOwner) {
         setBalance(balance);
         setPrimaryOwner(primaryOwner);
         setSecondaryOwner(secondaryOwner);
+        //Set creation date on current date
         setCreationDate();
+        //Set penalty fee on 40 and the currency of the balance
         setPenaltyFee();
+        //Set limit transactions on 0 and the currency of the balance
         setMaxLimitTransactions(new Money(BigDecimal.valueOf(0), balance.getCurrency()));
     }
 
+    /**
+     *  Class constructor specifying balance and primary owner
+     **/
     public Account(Money balance, AccountHolder primaryOwner) {
         setBalance(balance);
         setPrimaryOwner(primaryOwner);
+        //Set creation date on current date
         setCreationDate();
+        //Set penalty fee on 40 and the currency of the balance
         setPenaltyFee();
+        //Set limit transactions on 0 and the currency of the balance
         setMaxLimitTransactions(new Money(BigDecimal.valueOf(0), balance.getCurrency()));
     }
 
+    //Getters and setters
     public Long getId() {
         return id;
     }
