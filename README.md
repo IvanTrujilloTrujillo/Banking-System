@@ -147,7 +147,7 @@ Read the funcionalities section to learn what you can do with this API.
 
 - Case Diagram:
 
-![alt text]()
+![alt text](https://github.com/IvanTrujilloTrujillo/Midterm-Project/blob/main/src/main/resources/diagrams/Use%20Case%20Diagram%20Banking%20System.jpg)
 
 - Class Diagram:
 
