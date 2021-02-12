@@ -1,5 +1,6 @@
 package com.ironhack.bankingsystem.controller.impl;
 
+import com.ironhack.bankingsystem.controller.dtos.CheckingDTO;
 import com.ironhack.bankingsystem.controller.interfaces.ICheckingController;
 import com.ironhack.bankingsystem.model.Checking;
 import com.ironhack.bankingsystem.repository.CheckingRepository;
@@ -25,7 +26,7 @@ public class CheckingController implements ICheckingController {
     //Request for admins. Create a checking account or a student checking account
     @PostMapping("/admin/checking")
     @ResponseStatus(HttpStatus.CREATED)
-    public void createChecking(@RequestBody @Valid Checking checking) {
+    public void createChecking(@RequestBody @Valid CheckingDTO checking) {
         checkingService.createChecking(checking);
     }
 }

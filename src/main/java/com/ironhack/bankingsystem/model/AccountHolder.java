@@ -3,6 +3,7 @@ package com.ironhack.bankingsystem.model;
 import com.ironhack.bankingsystem.classes.Address;
 
 import javax.persistence.*;
+import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Past;
 import java.time.LocalDateTime;
@@ -21,6 +22,7 @@ public class AccountHolder extends User{
             @AttributeOverride(name="country",column=@Column(name="primary_country"))
     })
     @NotNull
+    @Valid
     private Address primaryAddress;
     @Embedded
     @AttributeOverrides({

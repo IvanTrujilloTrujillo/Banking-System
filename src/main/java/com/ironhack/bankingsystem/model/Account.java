@@ -5,6 +5,7 @@ import com.ironhack.bankingsystem.classes.Money;
 import org.hibernate.annotations.Proxy;
 
 import javax.persistence.*;
+import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -24,6 +25,7 @@ public class Account {
             @AttributeOverride(name="amount",column=@Column(name="balance_amount")),
     })
     @NotNull
+    @Valid
     private Money balance;
     @OneToOne
     @NotNull

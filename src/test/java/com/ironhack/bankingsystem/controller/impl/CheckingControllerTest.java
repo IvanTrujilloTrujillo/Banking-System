@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.ironhack.bankingsystem.classes.Address;
 import com.ironhack.bankingsystem.classes.Money;
+import com.ironhack.bankingsystem.controller.dtos.CheckingDTO;
 import com.ironhack.bankingsystem.model.AccountHolder;
 import com.ironhack.bankingsystem.model.Checking;
 import com.ironhack.bankingsystem.repository.AccountHolderRepository;
@@ -79,29 +80,8 @@ class CheckingControllerTest {
 
     @Test
     public void createChecking_ValidChecking_CheckingSaved() throws Exception {
-        Checking newChecking = new Checking(new Money(BigDecimal.valueOf(2000)), accountHolder, "Z9Y8X7");
-        Long id = accountHolder.getId();
-        //String body = objectMapper.writeValueAsString(newChecking);
-        String body = "{\n" +
-                "    \"balance\": {\n" +
-                "        \"currency\": \"USD\",\n" +
-                "        \"amount\": 2000\n" +
-                "    },\n" +
-                "    \"primaryOwner\": {\n" +
-                "        \"id\": "+ id +",\n" +
-                "        \"name\": \"Manuel Gómez\",\n" +
-                "        \"username\": \"manuelg\",\n" +
-                "        \"password\": \"1234\",\n" +
-                "        \"birthDate\": \"1990-02-18T23:00:25.002\",\n" +
-                "        \"primaryAddress\": {\n" +
-                "            \"street\": \"Calle La Isla\",\n" +
-                "            \"postalCode\": \"71254\",\n" +
-                "            \"city\": \"Barcelona\",\n" +
-                "            \"country\": \"Spain\"\n" +
-                "        }\n" +
-                "    },\n" +
-                "    \"secretKey\": \"DHYJK521\"\n" +
-                "}";
+        CheckingDTO newChecking = new CheckingDTO(new Money(BigDecimal.valueOf(2000)), accountHolder, "Z9Y8X7");
+        String body = objectMapper.writeValueAsString(newChecking);
 
         /**
          * I have some problems with these test. The object mapper gives bad request because of 'JSON parse error:
@@ -121,36 +101,15 @@ class CheckingControllerTest {
 
     @Test
     public void createChecking_NotValidChecking_NotAcceptable() throws Exception {
-        Checking newChecking = new Checking(new Money(BigDecimal.valueOf(-50)), accountHolder, "Z9Y8X7");
-        Long id = accountHolder.getId();
-        //String body = objectMapper.writeValueAsString(newChecking);
-        String body = "{\n" +
-                "    \"balance\": {\n" +
-                "        \"currency\": \"USD\",\n" +
-                "        \"amount\": -50\n" +
-                "    },\n" +
-                "    \"primaryOwner\": {\n" +
-                "        \"id\": "+ id +",\n" +
-                "        \"name\": \"Manuel Gómez\",\n" +
-                "        \"username\": \"manuelg\",\n" +
-                "        \"password\": \"1234\",\n" +
-                "        \"birthDate\": \"1990-02-18T23:00:25.002\",\n" +
-                "        \"primaryAddress\": {\n" +
-                "            \"street\": \"Calle La Isla\",\n" +
-                "            \"postalCode\": \"71254\",\n" +
-                "            \"city\": \"Barcelona\",\n" +
-                "            \"country\": \"Spain\"\n" +
-                "        }\n" +
-                "    },\n" +
-                "    \"secretKey\": \"DHYJK521\"\n" +
-                "}";
+        CheckingDTO newChecking = new CheckingDTO(new Money(BigDecimal.valueOf(-50)), accountHolder, "Z9Y8X7");
+        String body = objectMapper.writeValueAsString(newChecking);
 
         MvcResult result1 = mockMvc.perform(post("/admin/checking").content(body)
                 .contentType(MediaType.APPLICATION_JSON).characterEncoding("UTF-8"))
                 .andExpect(status().isNotAcceptable())
                 .andReturn();
 
-        newChecking = new Checking(new Money(BigDecimal.valueOf(5000)), accountHolder, "");
+        newChecking = new CheckingDTO(new Money(BigDecimal.valueOf(5000)), accountHolder, "");
         body = objectMapper.writeValueAsString(newChecking);
 
         MvcResult result2 = mockMvc.perform(post("/admin/checking").content(body)

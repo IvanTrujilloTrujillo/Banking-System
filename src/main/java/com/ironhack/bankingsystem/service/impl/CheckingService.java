@@ -1,6 +1,7 @@
 package com.ironhack.bankingsystem.service.impl;
 
 import com.ironhack.bankingsystem.classes.Money;
+import com.ironhack.bankingsystem.controller.dtos.CheckingDTO;
 import com.ironhack.bankingsystem.model.Checking;
 import com.ironhack.bankingsystem.model.StudentChecking;
 import com.ironhack.bankingsystem.repository.CheckingRepository;
@@ -25,7 +26,15 @@ public class CheckingService implements ICheckingService {
     private StudentCheckingRepository studentCheckingRepository;
 
     //Service to create a checking or student checking account
-    public void createChecking(Checking checking) {
+    public void createChecking(CheckingDTO checkingDTO) {
+
+        Checking checking = new Checking();
+        checking.setBalance(checkingDTO.getBalance());
+        checking.setPrimaryOwner(checkingDTO.getPrimaryOwner());
+        if(checkingDTO.getSecondaryOwner() != null) {
+            checking.setSecondaryOwner(checkingDTO.getSecondaryOwner());
+        }
+        checking.setSecretKey(checkingDTO.getSecretKey());
 
         //Check if the balance is smaller than
         if(checking.getBalance().getAmount().compareTo(BigDecimal.valueOf(0)) < 0) {

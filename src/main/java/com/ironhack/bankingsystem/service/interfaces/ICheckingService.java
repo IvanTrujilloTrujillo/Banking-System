@@ -1,7 +1,7 @@
 package com.ironhack.bankingsystem.service.interfaces;
 
-import com.ironhack.bankingsystem.model.Checking;
+import com.ironhack.bankingsystem.controller.dtos.CheckingDTO;
 
 public interface ICheckingService {
-    void createChecking(Checking checking);
+    void createChecking(CheckingDTO checking);
 }
