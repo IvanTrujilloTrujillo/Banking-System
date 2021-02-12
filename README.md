@@ -100,15 +100,21 @@ Read the funcionalities section to learn what you can do with this API.
 1. Savings
 
  · Savings accounts have a default interest rate of 0.0025
+ 
  · Savings accounts may be instantiated with an interest rate other than the default, with a maximum interest rate of 0.5
+ 
  · Savings accounts should have a default minimumBalance of 1000
+ 
  · Savings accounts may be instantiated with a minimum balance of less than 1000 but no lower than 100
  
 2. Credit Cards
 
  · CreditCard accounts have a default creditLimit of 100
+ 
  · CreditCards may be instantiated with a creditLimit higher than 100 but not higher than 100000
+ 
  · CreditCards have a default interestRate of 0.2
+ 
  · CreditCards may be instantiated with an interestRate less than 0.2 but not lower than 0.1
  
 3. Checking Accounts
