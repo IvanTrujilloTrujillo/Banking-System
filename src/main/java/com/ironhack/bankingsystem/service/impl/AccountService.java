@@ -121,16 +121,6 @@ public class AccountService implements IAccountService {
 
                         }
 
-                        //If the balance is below the minimum, we must subtract the penalty fee
-                        if (checkingRepository.findById(id).get().getBalance().getAmount().compareTo(
-                                checkingRepository.findById(id).get().getMinimumBalance().getAmount()) < 0) {
-
-                            checkingRepository.findById(id).get().getBalance().decreaseAmount(
-                                    checkingRepository.findById(id).get().getPenaltyFee());
-                            checkingRepository.save(checkingRepository.findById(id).get());
-
-                        }
-
                     //If it isn't a checking account, it could be a saving account
                     } else if (savingRepository.existsById(id)) {
 
@@ -144,16 +134,6 @@ public class AccountService implements IAccountService {
 
                             savingRepository.findById(id).get().setLastInterestAddedDate(LocalDateTime.now());
 
-                            savingRepository.save(savingRepository.findById(id).get());
-
-                        }
-
-                        //If the balance is below the minimum, we must subtract the penalty fee
-                        if (savingRepository.findById(id).get().getBalance().getAmount().compareTo(
-                                savingRepository.findById(id).get().getMinimumBalance().getAmount()) < 0) {
-
-                            savingRepository.findById(id).get().getBalance().decreaseAmount(
-                                    savingRepository.findById(id).get().getPenaltyFee());
                             savingRepository.save(savingRepository.findById(id).get());
 
                         }
@@ -177,16 +157,6 @@ public class AccountService implements IAccountService {
 
                         }
 
-                        //If the balance is above the limit credit, we must add the penalty fee
-                        if (creditCardRepository.findById(id).get().getBalance().getAmount().compareTo(
-                                creditCardRepository.findById(id).get().getCreditLimit().getAmount()) > 0) {
-
-                            //We need to ADD the penalty fee because the balance of the credit card is a credit
-                            creditCardRepository.findById(id).get().getBalance().increaseAmount(
-                                    creditCardRepository.findById(id).get().getPenaltyFee());
-                            creditCardRepository.save(creditCardRepository.findById(id).get());
-
-                        }
                     }
 
                     //Once all the checks are done, return the balance
@@ -357,15 +327,73 @@ public class AccountService implements IAccountService {
 
                                     if(status2 == Status.ACTIVE) {
 
-                                        senderAccount.getBalance().decreaseAmount(transaction.getAmount());
-                                        accountRepository.save(senderAccount);
+                                        //If the sender's account is a credit card, we need to add the amount instead
+                                        //of subtract
+                                        if(creditCardRepository.existsById(senderAccount.getId())) {
 
-                                        Account receiverAccount = accountRepository.findById(receiverAccountId).get();
-                                        receiverAccount.getBalance().increaseAmount(transaction.getAmount());
-                                        accountRepository.save(receiverAccount);
+                                            senderAccount.getBalance().increaseAmount(transaction.getAmount());
+                                            accountRepository.save(senderAccount);
+                                        } else {
+
+                                            senderAccount.getBalance().decreaseAmount(transaction.getAmount());
+                                            accountRepository.save(senderAccount);
+                                        }
+
+                                        //If the receiver's account is a credit card, we need to subtract the amount instead
+                                        //of add
+                                        if(creditCardRepository.existsById(senderAccount.getId())) {
+
+                                            Account receiverAccount = accountRepository.findById(receiverAccountId).get();
+                                            receiverAccount.getBalance().decreaseAmount(transaction.getAmount());
+                                            accountRepository.save(receiverAccount);
+                                        } else {
+
+                                            Account receiverAccount = accountRepository.findById(receiverAccountId).get();
+                                            receiverAccount.getBalance().increaseAmount(transaction.getAmount());
+                                            accountRepository.save(receiverAccount);
+                                        }
 
                                         transaction.setTransactionDate(LocalDateTime.now());
                                         transactionRepository.save(transaction);
+
+                                        //Now we must check if the sender's account is below the minimum balance in the
+                                        //case the account is a checking or a saving. If it's a credit card, we must
+                                        //check if it has passed the credit limit
+
+                                        //If it's a checking account
+                                        if(checkingRepository.existsById(senderAccount.getId())) {
+                                            //If the balance is below the minimum, we must subtract the penalty fee
+                                            if (checkingRepository.findById(senderAccount.getId()).get().getBalance().getAmount().compareTo(
+                                                    checkingRepository.findById(senderAccount.getId()).get().getMinimumBalance().getAmount()) < 0) {
+
+                                                checkingRepository.findById(senderAccount.getId()).get().getBalance().decreaseAmount(
+                                                        checkingRepository.findById(senderAccount.getId()).get().getPenaltyFee());
+                                                checkingRepository.save(checkingRepository.findById(senderAccount.getId()).get());
+                                            }
+
+                                        //If it's a saving account
+                                        } else if(savingRepository.existsById(senderAccount.getId())) {
+                                            //If the balance is below the minimum, we must subtract the penalty fee
+                                            if (savingRepository.findById(senderAccount.getId()).get().getBalance().getAmount().compareTo(
+                                                    savingRepository.findById(senderAccount.getId()).get().getMinimumBalance().getAmount()) < 0) {
+
+                                                savingRepository.findById(senderAccount.getId()).get().getBalance().decreaseAmount(
+                                                        savingRepository.findById(senderAccount.getId()).get().getPenaltyFee());
+                                                savingRepository.save(savingRepository.findById(senderAccount.getId()).get());
+                                            }
+
+                                        //If the balance is above the limit credit, we must add the penalty fee
+                                        } else if(creditCardRepository.existsById(senderAccount.getId())) {
+
+                                            if (creditCardRepository.findById(senderAccount.getId()).get().getBalance().getAmount().compareTo(
+                                                    creditCardRepository.findById(senderAccount.getId()).get().getCreditLimit().getAmount()) > 0) {
+
+                                                //We need to ADD the penalty fee because the balance of the credit card is a credit
+                                                creditCardRepository.findById(senderAccount.getId()).get().getBalance().increaseAmount(
+                                                        creditCardRepository.findById(senderAccount.getId()).get().getPenaltyFee());
+                                                creditCardRepository.save(creditCardRepository.findById(senderAccount.getId()).get());
+                                            }
+                                        }
 
                                     } else {
                                         throw new ResponseStatusException(HttpStatus.NOT_ACCEPTABLE, "The receiver account is frozen");
@@ -382,7 +410,6 @@ public class AccountService implements IAccountService {
                         } else {
                             throw new ResponseStatusException(HttpStatus.NOT_ACCEPTABLE, "You don´t have enough balance");
                         }
-
 
                     } else {
                         if(checkingRepository.existsById(senderAccount.getId())){
