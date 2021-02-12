@@ -100,7 +100,7 @@ public class AccountService implements IAccountService {
                 //Check if the status is active
                 if(status == Status.ACTIVE) {
 
-                    //Now, we must check if the conditions to add or subtract the maintenance fee, minimum balance,
+                    //Now, we must check if the conditions to add or subtract the maintenance fee
                     //and interest rate are met.
 
                     //First, the conditions to the checking account (if the account is this type)
@@ -518,6 +518,31 @@ public class AccountService implements IAccountService {
                                     Account account = accountRepository.findById(id).get();
                                     account.getBalance().decreaseAmount(amount.getAmount());
                                     accountRepository.save(account);
+
+                                    //Now we must check if the sender's account is below the minimum balance in the
+                                    //case the account is a checking or a saving.
+
+                                    //If it's a checking account
+                                    if(checkingRepository.existsById(id)) {
+                                        //If the balance is below the minimum, we must subtract the penalty fee
+                                        if (checkingRepository.findById(id).get().getBalance().getAmount().compareTo(
+                                                checkingRepository.findById(id).get().getMinimumBalance().getAmount()) < 0) {
+
+                                            checkingRepository.findById(id).get().getBalance().decreaseAmount(
+                                                    checkingRepository.findById(id).get().getPenaltyFee());
+                                            checkingRepository.save(checkingRepository.findById(id).get());
+                                        }
+                                    //If it's a saving account
+                                    } else if(savingRepository.existsById(id)) {
+                                        //If the balance is below the minimum, we must subtract the penalty fee
+                                        if (savingRepository.findById(id).get().getBalance().getAmount().compareTo(
+                                                savingRepository.findById(id).get().getMinimumBalance().getAmount()) < 0) {
+
+                                            savingRepository.findById(id).get().getBalance().decreaseAmount(
+                                                    savingRepository.findById(id).get().getPenaltyFee());
+                                            savingRepository.save(savingRepository.findById(id).get());
+                                        }
+                                    }
 
                                 } else {
                                     throw new ResponseStatusException(HttpStatus.NOT_ACCEPTABLE, "The Secret Key doesn't match " +
