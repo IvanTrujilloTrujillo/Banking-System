@@ -2,14 +2,12 @@ package com.ironhack.bankingsystem.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.ironhack.bankingsystem.classes.Money;
-import org.hibernate.annotations.Proxy;
 
 import javax.persistence.*;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.Currency;
 import java.util.List;
 
 @Entity

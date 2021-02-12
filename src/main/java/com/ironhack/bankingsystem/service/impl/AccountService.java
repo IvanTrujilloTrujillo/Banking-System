@@ -5,6 +5,8 @@ import com.ironhack.bankingsystem.controller.dtos.BalanceDTO;
 import com.ironhack.bankingsystem.controller.dtos.MoneyDTO;
 import com.ironhack.bankingsystem.enums.Status;
 import com.ironhack.bankingsystem.model.Account;
+import com.ironhack.bankingsystem.model.Checking;
+import com.ironhack.bankingsystem.model.StudentChecking;
 import com.ironhack.bankingsystem.model.Transaction;
 import com.ironhack.bankingsystem.repository.*;
 import com.ironhack.bankingsystem.service.interfaces.IAccountService;
@@ -157,6 +159,25 @@ public class AccountService implements IAccountService {
 
                         }
 
+                    }
+
+                    //Finally, if it's a student checking account, we need to check if the primary owner is now more
+                    //than 24 years old. In that case, we would convert the student checking account on a checking account
+                    if (studentCheckingRepository.existsById(id)) {
+
+                        if (ChronoUnit.YEARS.between(studentCheckingRepository.findById(id).get().getPrimaryOwner()
+                                .getBirthDate(), LocalDateTime.now()) > 24) {
+
+                            StudentChecking studentChecking = studentCheckingRepository.findById(id).get();
+                            studentCheckingRepository.deleteById(id);
+                            Checking checking = new Checking(studentChecking.getBalance(),
+                                    studentChecking.getPrimaryOwner(), studentChecking.getSecretKey());
+                            if(studentChecking.getSecondaryOwner() != null) {
+                                checking.setSecondaryOwner(checking.getSecondaryOwner());
+                            }
+
+                            checkingRepository.save(checking);
+                        }
                     }
 
                     //Once all the checks are done, return the balance
