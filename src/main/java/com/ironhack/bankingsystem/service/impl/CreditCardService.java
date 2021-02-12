@@ -21,9 +21,14 @@ public class CreditCardService implements ICreditCardService {
     //Service to create an credit card by an admin
     public CreditCard createCreditCard(CreditCard creditCard) {
 
-        //Check if the balance is negative
-        if(creditCard.getBalance().getAmount().compareTo(BigDecimal.valueOf(0)) < 0) {
-            throw new ResponseStatusException(HttpStatus.NOT_ACCEPTABLE, "The balance must be greater or equals than 0");
+        //If the balance is null, set it to 0 because it's a credit card
+        if(creditCard.getBalance() == null) {
+            creditCard.setBalance(new Money(BigDecimal.valueOf(0)));
+        }
+
+        //Check if the balance is zero
+        if(creditCard.getBalance().getAmount().compareTo(BigDecimal.valueOf(0)) == 0) {
+            throw new ResponseStatusException(HttpStatus.NOT_ACCEPTABLE, "The balance must be 0");
         } else {
 
             //Check if the credit limit is set

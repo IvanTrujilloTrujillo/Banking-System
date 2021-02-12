@@ -176,6 +176,17 @@ public class AccountService implements IAccountService {
                             creditCardRepository.save(creditCardRepository.findById(id).get());
 
                         }
+
+                        //If the balance is above the limit credit, we must add the penalty fee
+                        if (creditCardRepository.findById(id).get().getBalance().getAmount().compareTo(
+                                creditCardRepository.findById(id).get().getCreditLimit().getAmount()) > 0) {
+
+                            //We need to ADD the penalty fee because the balance of the credit card is a credit
+                            creditCardRepository.findById(id).get().getBalance().increaseAmount(
+                                    creditCardRepository.findById(id).get().getPenaltyFee());
+                            creditCardRepository.save(creditCardRepository.findById(id).get());
+
+                        }
                     }
 
                     //Once all the checks are done, return the balance
