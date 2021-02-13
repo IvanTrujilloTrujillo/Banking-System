@@ -16,6 +16,10 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import javax.money.Monetary;
+import javax.money.MonetaryAmount;
+import javax.money.convert.CurrencyConversion;
+import javax.money.convert.MonetaryConversions;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
@@ -353,26 +357,79 @@ public class AccountService implements IAccountService {
                                         //of subtract
                                         if(creditCardRepository.existsById(senderAccount.getId())) {
 
-                                            senderAccount.getBalance().increaseAmount(transaction.getAmount());
+                                            //Check if the currencies are the same
+                                            if(transaction.getAmount().getCurrency().equals(creditCardRepository
+                                                    .findById(senderAccount.getId()).get()
+                                                    .getBalance().getCurrency())) {
+
+                                                senderAccount.getBalance().increaseAmount(transaction.getAmount());
+
+                                                //If they aren't the same, convert to the account currency
+                                            } else {
+
+                                                senderAccount.getBalance().increaseAmount(currencyConversion(
+                                                        transaction.getAmount(), senderAccount.getBalance().getCurrency()));
+                                            }
                                             accountRepository.save(senderAccount);
                                         } else {
 
-                                            senderAccount.getBalance().decreaseAmount(transaction.getAmount());
+                                            //Check if the currencies are the same
+                                            if(transaction.getAmount().getCurrency().equals(accountRepository
+                                                    .findById(senderAccount.getId()).get()
+                                                    .getBalance().getCurrency())) {
+
+                                                senderAccount.getBalance().decreaseAmount(transaction.getAmount());
+
+                                            //If they aren't the same, convert to the account currency
+                                            } else {
+
+                                                senderAccount.getBalance().decreaseAmount(currencyConversion(
+                                                        transaction.getAmount(), senderAccount.getBalance().getCurrency()));
+                                            }
                                             accountRepository.save(senderAccount);
                                         }
 
                                         //If the receiver's account is a credit card, we need to subtract the amount instead
                                         //of add
-                                        if(creditCardRepository.existsById(senderAccount.getId())) {
+                                        if(creditCardRepository.existsById(receiverAccountId)) {
 
-                                            Account receiverAccount = accountRepository.findById(receiverAccountId).get();
-                                            receiverAccount.getBalance().decreaseAmount(transaction.getAmount());
-                                            accountRepository.save(receiverAccount);
+                                            //Check if the currencies are the same
+                                            if(transaction.getAmount().getCurrency().equals(creditCardRepository
+                                                    .findById(receiverAccountId).get()
+                                                    .getBalance().getCurrency())) {
+
+                                                Account receiverAccount = accountRepository.findById(receiverAccountId).get();
+                                                receiverAccount.getBalance().decreaseAmount(transaction.getAmount());
+                                                accountRepository.save(receiverAccount);
+
+                                            //If they aren't the same, convert to the account currency
+                                            } else {
+
+                                                Account receiverAccount = accountRepository.findById(receiverAccountId).get();
+                                                receiverAccount.getBalance().decreaseAmount(currencyConversion(
+                                                        transaction.getAmount(), receiverAccount.getBalance().getCurrency()));
+                                                accountRepository.save(receiverAccount);
+                                            }
+
                                         } else {
 
-                                            Account receiverAccount = accountRepository.findById(receiverAccountId).get();
-                                            receiverAccount.getBalance().increaseAmount(transaction.getAmount());
-                                            accountRepository.save(receiverAccount);
+                                            //Check if the currencies are the same
+                                            if(transaction.getAmount().getCurrency().equals(accountRepository
+                                                    .findById(receiverAccountId).get()
+                                                    .getBalance().getCurrency())) {
+
+                                                Account receiverAccount = accountRepository.findById(receiverAccountId).get();
+                                                receiverAccount.getBalance().increaseAmount(transaction.getAmount());
+                                                accountRepository.save(receiverAccount);
+
+                                            //If they aren't the same, convert to the account currency
+                                            } else {
+
+                                                Account receiverAccount = accountRepository.findById(receiverAccountId).get();
+                                                receiverAccount.getBalance().increaseAmount(currencyConversion(
+                                                        transaction.getAmount(), receiverAccount.getBalance().getCurrency()));
+                                                accountRepository.save(receiverAccount);
+                                            }
                                         }
 
                                         transaction.setTransactionDate(LocalDateTime.now());
@@ -624,9 +681,23 @@ public class AccountService implements IAccountService {
                             //Check if the secret key matches
                             if (checkingRepository.findById(id).get().getSecretKey().equals(secretKey)) {
 
-                                Account account = accountRepository.findById(id).get();
-                                account.getBalance().increaseAmount(amount.getAmount());
-                                accountRepository.save(account);
+                                //Check if the currencies are the same
+                                if(amount.getCurrency().equals(checkingRepository.findById(id).get()
+                                        .getBalance().getCurrency().getCurrencyCode())) {
+
+                                    Account account = accountRepository.findById(id).get();
+                                    account.getBalance().increaseAmount(amount.getAmount());
+                                    accountRepository.save(account);
+
+                                //If they aren't the same, convert to the account currency
+                                } else {
+
+                                    Account account = accountRepository.findById(id).get();
+                                    account.getBalance().increaseAmount(currencyConversion(
+                                            new Money(amount.getAmount(), Currency.getInstance(amount.getCurrency())),
+                                            account.getBalance().getCurrency()));
+                                    accountRepository.save(account);
+                                }
 
                             } else {
                                 throw new ResponseStatusException(HttpStatus.NOT_ACCEPTABLE, "The Secret Key doesn't match " +
@@ -639,10 +710,22 @@ public class AccountService implements IAccountService {
                             //Check if the secret key matches
                             if (studentCheckingRepository.findById(id).get().getSecretKey().equals(secretKey)) {
 
-                                Account account = accountRepository.findById(id).get();
-                                account.getBalance().increaseAmount(amount.getAmount());
-                                accountRepository.save(account);
+                                //Check if the currencies are the same
+                                if(amount.getCurrency().equals(studentCheckingRepository.findById(id).get()
+                                        .getBalance().getCurrency().getCurrencyCode())) {
 
+                                    Account account = accountRepository.findById(id).get();
+                                    account.getBalance().increaseAmount(amount.getAmount());
+                                    accountRepository.save(account);
+
+                                //If they aren't the same, convert to the account currency
+                                } else {
+                                    Account account = accountRepository.findById(id).get();
+                                    account.getBalance().increaseAmount(currencyConversion(
+                                            new Money(amount.getAmount(), Currency.getInstance(amount.getCurrency())),
+                                            account.getBalance().getCurrency()));
+                                    accountRepository.save(account);
+                                }
                             } else {
                                 throw new ResponseStatusException(HttpStatus.NOT_ACCEPTABLE, "The Secret Key doesn't match " +
                                         "with the Account");
@@ -654,10 +737,22 @@ public class AccountService implements IAccountService {
                             //Check if the secret key matches
                             if (savingRepository.findById(id).get().getSecretKey().equals(secretKey)) {
 
-                                Account account = accountRepository.findById(id).get();
-                                account.getBalance().increaseAmount(amount.getAmount());
-                                accountRepository.save(account);
+                                //Check if the currencies are the same
+                                if(amount.getCurrency().equals(savingRepository.findById(id).get()
+                                        .getBalance().getCurrency().getCurrencyCode())) {
 
+                                    Account account = accountRepository.findById(id).get();
+                                    account.getBalance().increaseAmount(amount.getAmount());
+                                    accountRepository.save(account);
+
+                                //If they aren't the same, convert to the account currency
+                                } else {
+                                    Account account = accountRepository.findById(id).get();
+                                    account.getBalance().increaseAmount(currencyConversion(
+                                            new Money(amount.getAmount(), Currency.getInstance(amount.getCurrency())),
+                                            account.getBalance().getCurrency()));
+                                    accountRepository.save(account);
+                                }
                             } else {
                                 throw new ResponseStatusException(HttpStatus.NOT_ACCEPTABLE, "The Secret Key doesn't match " +
                                         "with the Account");
@@ -720,5 +815,21 @@ public class AccountService implements IAccountService {
         } else {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "The Account Id doesn't exist");
         }
+    }
+
+    //A method to convert a Money to another currency
+    public Money currencyConversion(Money initialAmount, Currency finalCurrency) {
+        //Create a Monetary class from the initialAmount
+        MonetaryAmount initialMoney = Monetary.getDefaultAmountFactory().setCurrency(initialAmount.getCurrency().getCurrencyCode())
+                .setNumber(initialAmount.getAmount()).create();
+
+        //Create a CurrencyConversion class from the finalCurrency
+        CurrencyConversion currencyConversion = MonetaryConversions.getConversion(finalCurrency.getCurrencyCode());
+
+        //Make the conversion
+        MonetaryAmount convertedAmount = initialMoney.with(currencyConversion);
+
+        //Return a Money class with the ner amount and currency
+        return new Money(BigDecimal.valueOf(convertedAmount.getNumber().doubleValueExact()), finalCurrency);
     }
 }
