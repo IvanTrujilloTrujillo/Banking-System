@@ -153,6 +153,8 @@ Read the funcionalities section to learn what you can do with this API.
  /admin/unfreeze-account/{id}  (HTTP PATCH)
 ```
 
+- Currency conversion on transfer money and send money from a third party
+
 ## Diagrams
 
 - Case Diagram:
