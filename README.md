@@ -147,6 +147,12 @@ Read the funcionalities section to learn what you can do with this API.
 
 - If an account holder has a student checking but is 24 years old or more, the student checking is deleted and a checking account is created with the some data when the account holder requests to see his/her balance.
 
+- An admin can unfreeze an account with the next request:
+
+```bash
+ /admin/unfreeze-account/{id}  (HTTP PATCH)
+```
+
 ## Diagrams
 
 - Case Diagram:
